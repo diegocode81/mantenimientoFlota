@@ -166,6 +166,13 @@ export default function Home() {
     });
   }, [maintenanceRecords, maintenanceSearch, statusFilter]);
 
+  const maintenanceInShop = useMemo(
+    () =>
+      maintenanceRecords.filter((record) => record.estado === "MANTENIMIENTO")
+        .length,
+    [maintenanceRecords],
+  );
+
   function updateFleetField<K extends keyof FleetForm>(
     field: K,
     value: FleetForm[K],
@@ -360,6 +367,21 @@ export default function Home() {
         </button>
       </nav>
 
+      <section className="metricStrip" aria-label="Resumen operativo">
+        <div className="metricItem">
+          <span>Vehiculos</span>
+          <strong>{vehicles.length}</strong>
+        </div>
+        <div className="metricItem">
+          <span>Mantenimientos</span>
+          <strong>{maintenanceRecords.length}</strong>
+        </div>
+        <div className="metricItem">
+          <span>En mantenimiento</span>
+          <strong>{maintenanceInShop}</strong>
+        </div>
+      </section>
+
       {activeTab === "FLOTA" ? (
         <section className="workspace">
           <form className="formPanel" onSubmit={submitFleet}>
@@ -496,7 +518,9 @@ export default function Home() {
                   ) : (
                     filteredVehicles.map((vehicle) => (
                       <tr key={vehicle.id}>
-                        <td>{vehicle.placa}</td>
+                        <td>
+                          <strong className="primaryCell">{vehicle.placa}</strong>
+                        </td>
                         <td>{vehicle.disco}</td>
                         <td>{vehicle.marca}</td>
                         <td>{vehicle.tipo}</td>
@@ -730,7 +754,12 @@ export default function Home() {
                     filteredMaintenance.map((record) => (
                       <tr key={record.id}>
                         <td>
-                          {record.vehiculo.placa} - {record.vehiculo.marca}
+                          <strong className="primaryCell">
+                            {record.vehiculo.placa}
+                          </strong>
+                          <span className="secondaryCell">
+                            {record.vehiculo.marca}
+                          </span>
                         </td>
                         <td>{record.vehiculo.disco}</td>
                         <td>{dateForInput(record.fechaMantenimiento)}</td>
