@@ -105,6 +105,7 @@ export default function Home() {
   >(null);
   const [fleetSearch, setFleetSearch] = useState("");
   const [maintenanceSearch, setMaintenanceSearch] = useState("");
+  const [maintenanceDate, setMaintenanceDate] = useState("");
   const [statusFilter, setStatusFilter] = useState<"TODOS" | EstadoVehiculo>(
     "TODOS",
   );
@@ -168,29 +169,38 @@ export default function Home() {
   const filteredMaintenance = useMemo(() => {
     const term = maintenanceSearch.trim().toLowerCase();
 
-    return maintenanceRecords.filter((record) => {
-      const matchesStatus =
-        statusFilter === "TODOS" || record.estado === statusFilter;
-      const matchesSearch =
-        !term ||
-        [
-          record.vehiculo.placa,
-          record.vehiculo.disco,
-          record.vehiculo.marca,
-          String(record.kilometrajeOdometro),
-          record.tipoMantenimiento,
-          record.rutaUbicacion,
-          record.tecnicosDesignados,
-          record.observaciones ?? "",
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(term);
+    return maintenanceRecords
+      .filter((record) => {
+        const matchesStatus =
+          statusFilter === "TODOS" || record.estado === statusFilter;
+        const recordDate = dateForInput(record.fechaMantenimiento);
+        const matchesDate = !maintenanceDate || recordDate === maintenanceDate;
+        const matchesSearch =
+          !term ||
+          [
+            recordDate,
+            record.vehiculo.placa,
+            record.vehiculo.disco,
+            record.vehiculo.marca,
+            String(record.kilometrajeOdometro),
+            record.tipoMantenimiento,
+            record.rutaUbicacion,
+            record.tecnicosDesignados,
+            record.observaciones ?? "",
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase()
+            .includes(term);
 
-      return matchesStatus && matchesSearch;
-    });
-  }, [maintenanceRecords, maintenanceSearch, statusFilter]);
+        return matchesStatus && matchesDate && matchesSearch;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.fechaMantenimiento).getTime() -
+          new Date(a.fechaMantenimiento).getTime(),
+      );
+  }, [maintenanceRecords, maintenanceSearch, maintenanceDate, statusFilter]);
 
   const maintenanceInShop = useMemo(
     () =>
@@ -218,7 +228,7 @@ export default function Home() {
 
   useEffect(() => {
     setMaintenancePage(1);
-  }, [maintenanceSearch, statusFilter]);
+  }, [maintenanceSearch, maintenanceDate, statusFilter]);
 
   useEffect(() => {
     setFleetPage((page) => Math.min(page, fleetPageCount));
@@ -792,9 +802,15 @@ export default function Home() {
               <div className="filters">
                 <input
                   aria-label="Buscar mantenimiento"
-                  placeholder="Buscar placa, ruta, tecnico..."
+                  placeholder="Buscar placa, fecha, ruta, tecnico..."
                   value={maintenanceSearch}
                   onChange={(event) => setMaintenanceSearch(event.target.value)}
+                />
+                <input
+                  aria-label="Filtrar por fecha"
+                  type="date"
+                  value={maintenanceDate}
+                  onChange={(event) => setMaintenanceDate(event.target.value)}
                 />
                 <select
                   aria-label="Filtrar estado"

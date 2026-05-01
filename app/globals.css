@@ -311,7 +311,7 @@ h2 {
 .filters {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(240px, 390px) 190px;
+  grid-template-columns: minmax(240px, 390px) 170px 190px;
 }
 
 .singleFilter {
