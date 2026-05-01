@@ -36,11 +36,13 @@ export function parseFleetInput(body: unknown): FleetInput {
   }
 
   const data = body as Record<string, unknown>;
+
   for (const field of fleetFields) {
     requireText(data, field);
   }
 
   const ano = Number(data.ano);
+
   if (!Number.isInteger(ano) || ano < 1900 || ano > 2100) {
     throw new Error("El año debe ser un numero valido.");
   }
@@ -61,6 +63,7 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
   }
 
   const data = body as Record<string, unknown>;
+
   const vehiculoId = requireText(data, "vehiculoId");
   const rutaUbicacion = requireText(data, "rutaUbicacion");
   const tecnicosDesignados = requireText(data, "tecnicosDesignados");
@@ -81,6 +84,8 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     throw new Error("El estado debe ser operativo o mantenimiento.");
   }
 
+  let tipoMantenimiento: TipoMantenimiento | null = null;
+
   if (data.estado === EstadoVehiculo.MANTENIMIENTO) {
     if (
       data.tipoMantenimiento !== TipoMantenimiento.CORRECTIVO &&
@@ -89,6 +94,8 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     ) {
       throw new Error("El tipo de mantenimiento no es valido.");
     }
+
+    tipoMantenimiento = data.tipoMantenimiento as TipoMantenimiento;
   }
 
   if (typeof data.fechaMantenimiento !== "string" || !data.fechaMantenimiento) {
@@ -96,6 +103,7 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
   }
 
   const fechaMantenimiento = new Date(`${data.fechaMantenimiento}T00:00:00`);
+
   if (Number.isNaN(fechaMantenimiento.getTime())) {
     throw new Error("La fecha de mantenimiento no es valida.");
   }
@@ -105,8 +113,7 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     fechaMantenimiento,
     estado: data.estado,
     kilometrajeOdometro,
-    tipoMantenimiento:
-      data.estado === EstadoVehiculo.OPERATIVO ? null : data.tipoMantenimiento,
+    tipoMantenimiento,
     rutaUbicacion,
     tecnicosDesignados,
     observaciones:
