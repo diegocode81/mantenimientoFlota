@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EstadoVehiculo {
+  OPERATIVO
+  MANTENIMIENTO
+}
+
+model VehiculoMantenimiento {
+  id                  String         @id @default(cuid())
+  placa               String
+  disco               String
+  marca               String
+  tipo                String
+  ano                 Int
+  cia                 String
+  fechaMantenimiento  DateTime
+  estado              EstadoVehiculo
+  observaciones       String?
+  rutaUbicacion       String
+  tecnicosDesignados  String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([placa])
+  @@index([estado])
+  @@index([fechaMantenimiento])
+}

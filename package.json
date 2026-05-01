@@ -1,0 +1,32 @@
+{
+  "name": "mantenimiento-flota",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "next": "^15.3.1",
+    "prisma": "^5.22.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "eslint": "^9.26.0",
+    "eslint-config-next": "^15.3.1",
+    "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  }
+}
