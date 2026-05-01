@@ -149,6 +149,30 @@ h2 {
   margin-bottom: 20px;
 }
 
+.brandTitle {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.brandIcon {
+  align-items: center;
+  background: var(--primary);
+  border-radius: 8px;
+  box-shadow: 0 10px 22px rgba(15, 118, 110, 0.22);
+  color: #fff;
+  display: inline-flex;
+  height: 52px;
+  justify-content: center;
+  width: 52px;
+}
+
+.brandIcon svg {
+  fill: currentColor;
+  height: 31px;
+  width: 31px;
+}
+
 .eyebrow {
   color: var(--primary);
   font-size: 0.76rem;
@@ -486,6 +510,10 @@ tbody tr:last-child td {
   .paginationBar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .brandTitle {
+    align-items: flex-start;
   }
 
   .exportButton,

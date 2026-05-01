@@ -424,9 +424,16 @@ export default function Home() {
   return (
     <main className="appShell">
       <header className="topBar">
-        <div>
-          <p className="eyebrow">Control operativo</p>
-          <h1>Mantenimiento de flota</h1>
+        <div className="brandTitle">
+          <span className="brandIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5.4 11.2 7 6.9A3 3 0 0 1 9.8 5h4.4A3 3 0 0 1 17 6.9l1.6 4.3A3 3 0 0 1 21 14v3h-2.1a2.5 2.5 0 0 1-4.8 0H9.9a2.5 2.5 0 0 1-4.8 0H3v-3a3 3 0 0 1 2.4-2.8Zm2.2-.2h8.8l-1.2-3.3a1 1 0 0 0-1-.7H9.8a1 1 0 0 0-1 .7L7.6 11ZM7.5 18a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm9 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1ZM5 15h14v-1a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v1Z" />
+            </svg>
+          </span>
+          <div>
+            <p className="eyebrow">Control operativo</p>
+            <h1>Mantenimiento de flota</h1>
+          </div>
         </div>
         <a className="exportButton" href="/api/vehicles/export">
           Descargar Excel
