@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Mantenimiento de Flota",
   description: "Sistema sencillo para registrar mantenimiento de vehiculos.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
