@@ -30,6 +30,8 @@ export async function GET() {
     "CIA",
     "Fecha de mantenimiento",
     "Estado",
+    "Kilometraje / Odometro",
+    "Tipo de mantenimiento",
     "Observaciones",
     "Ruta / Ubicacion",
     "Tecnicos designados",
@@ -46,6 +48,12 @@ export async function GET() {
         record.vehiculo.cia,
         record.fechaMantenimiento.toISOString().slice(0, 10),
         record.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Operativo",
+        record.kilometrajeOdometro,
+        record.tipoMantenimiento === "CORRECTIVO"
+          ? "Mantenimiento correctivo"
+          : record.tipoMantenimiento === "PREVENTIVO"
+            ? "Mantenimiento preventivo"
+            : "Mantenimiento proactivo",
         record.observaciones ?? "",
         record.rutaUbicacion,
         record.tecnicosDesignados,

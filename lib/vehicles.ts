@@ -1,4 +1,4 @@
-import { EstadoVehiculo } from "@prisma/client";
+import { EstadoVehiculo, TipoMantenimiento } from "@prisma/client";
 
 export type FleetInput = {
   placa: string;
@@ -13,6 +13,8 @@ export type MaintenanceInput = {
   vehiculoId: string;
   fechaMantenimiento: Date;
   estado: EstadoVehiculo;
+  kilometrajeOdometro: number;
+  tipoMantenimiento: TipoMantenimiento;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones?: string | null;
@@ -62,12 +64,29 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
   const vehiculoId = requireText(data, "vehiculoId");
   const rutaUbicacion = requireText(data, "rutaUbicacion");
   const tecnicosDesignados = requireText(data, "tecnicosDesignados");
+  const kilometrajeOdometro = Number(data.kilometrajeOdometro);
+
+  if (
+    !Number.isInteger(kilometrajeOdometro) ||
+    kilometrajeOdometro < 0 ||
+    kilometrajeOdometro > 9999999
+  ) {
+    throw new Error("El kilometraje/odometro debe ser un numero valido.");
+  }
 
   if (
     data.estado !== EstadoVehiculo.OPERATIVO &&
     data.estado !== EstadoVehiculo.MANTENIMIENTO
   ) {
     throw new Error("El estado debe ser operativo o mantenimiento.");
+  }
+
+  if (
+    data.tipoMantenimiento !== TipoMantenimiento.CORRECTIVO &&
+    data.tipoMantenimiento !== TipoMantenimiento.PREVENTIVO &&
+    data.tipoMantenimiento !== TipoMantenimiento.PROACTIVO
+  ) {
+    throw new Error("El tipo de mantenimiento no es valido.");
   }
 
   if (typeof data.fechaMantenimiento !== "string" || !data.fechaMantenimiento) {
@@ -83,6 +102,8 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     vehiculoId,
     fechaMantenimiento,
     estado: data.estado,
+    kilometrajeOdometro,
+    tipoMantenimiento: data.tipoMantenimiento,
     rutaUbicacion,
     tecnicosDesignados,
     observaciones:

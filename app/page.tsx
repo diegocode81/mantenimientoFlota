@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type EstadoVehiculo = "OPERATIVO" | "MANTENIMIENTO";
+type TipoMantenimiento = "CORRECTIVO" | "PREVENTIVO" | "PROACTIVO";
 type Tab = "FLOTA" | "MANTENIMIENTOS";
 
 type FleetVehicle = {
@@ -21,6 +22,8 @@ type MaintenanceRecord = {
   vehiculoId: string;
   fechaMantenimiento: string;
   estado: EstadoVehiculo;
+  kilometrajeOdometro: number;
+  tipoMantenimiento: TipoMantenimiento;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones: string | null;
@@ -33,6 +36,8 @@ type MaintenanceForm = {
   vehiculoId: string;
   fechaMantenimiento: string;
   estado: EstadoVehiculo;
+  kilometrajeOdometro: number;
+  tipoMantenimiento: TipoMantenimiento;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones: string;
@@ -51,6 +56,8 @@ const emptyMaintenanceForm: MaintenanceForm = {
   vehiculoId: "",
   fechaMantenimiento: new Date().toISOString().slice(0, 10),
   estado: "OPERATIVO",
+  kilometrajeOdometro: 0,
+  tipoMantenimiento: "PREVENTIVO",
   rutaUbicacion: "",
   tecnicosDesignados: "",
   observaciones: "",
@@ -145,6 +152,8 @@ export default function Home() {
           record.vehiculo.placa,
           record.vehiculo.disco,
           record.vehiculo.marca,
+          String(record.kilometrajeOdometro),
+          record.tipoMantenimiento,
           record.rutaUbicacion,
           record.tecnicosDesignados,
           record.observaciones ?? "",
@@ -271,6 +280,8 @@ export default function Home() {
       vehiculoId: record.vehiculoId,
       fechaMantenimiento: dateForInput(record.fechaMantenimiento),
       estado: record.estado,
+      kilometrajeOdometro: record.kilometrajeOdometro,
+      tipoMantenimiento: record.tipoMantenimiento,
       rutaUbicacion: record.rutaUbicacion,
       tecnicosDesignados: record.tecnicosDesignados,
       observaciones: record.observaciones ?? "",
@@ -585,6 +596,38 @@ export default function Home() {
                 </select>
               </label>
               <label>
+                Kilometraje / Odometro
+                <input
+                  required
+                  min="0"
+                  max="9999999"
+                  type="number"
+                  value={maintenanceForm.kilometrajeOdometro}
+                  onChange={(event) =>
+                    updateMaintenanceField(
+                      "kilometrajeOdometro",
+                      Number(event.target.value),
+                    )
+                  }
+                />
+              </label>
+              <label>
+                Tipo de mantenimiento
+                <select
+                  value={maintenanceForm.tipoMantenimiento}
+                  onChange={(event) =>
+                    updateMaintenanceField(
+                      "tipoMantenimiento",
+                      event.target.value as TipoMantenimiento,
+                    )
+                  }
+                >
+                  <option value="CORRECTIVO">Mantenimiento correctivo</option>
+                  <option value="PREVENTIVO">Mantenimiento preventivo</option>
+                  <option value="PROACTIVO">Mantenimiento proactivo</option>
+                </select>
+              </label>
+              <label>
                 Ruta / ubicacion
                 <input
                   required
@@ -666,6 +709,8 @@ export default function Home() {
                     <th>Disco</th>
                     <th>Fecha</th>
                     <th>Estado</th>
+                    <th>Kilometraje</th>
+                    <th>Tipo</th>
                     <th>Ruta</th>
                     <th>Tecnicos</th>
                     <th>Observaciones</th>
@@ -675,11 +720,11 @@ export default function Home() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={8}>Cargando mantenimientos...</td>
+                      <td colSpan={10}>Cargando mantenimientos...</td>
                     </tr>
                   ) : filteredMaintenance.length === 0 ? (
                     <tr>
-                      <td colSpan={8}>No hay mantenimientos para mostrar.</td>
+                      <td colSpan={10}>No hay mantenimientos para mostrar.</td>
                     </tr>
                   ) : (
                     filteredMaintenance.map((record) => (
@@ -695,6 +740,14 @@ export default function Home() {
                               ? "Mantenimiento"
                               : "Operativo"}
                           </span>
+                        </td>
+                        <td>{record.kilometrajeOdometro}</td>
+                        <td>
+                          {record.tipoMantenimiento === "CORRECTIVO"
+                            ? "Correctivo"
+                            : record.tipoMantenimiento === "PREVENTIVO"
+                              ? "Preventivo"
+                              : "Proactivo"}
                         </td>
                         <td>{record.rutaUbicacion}</td>
                         <td>{record.tecnicosDesignados}</td>

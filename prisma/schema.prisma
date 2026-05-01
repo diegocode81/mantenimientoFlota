@@ -13,6 +13,12 @@ enum EstadoVehiculo {
   MANTENIMIENTO
 }
 
+enum TipoMantenimiento {
+  CORRECTIVO
+  PREVENTIVO
+  PROACTIVO
+}
+
 model Vehiculo {
   id             String                  @id @default(cuid())
   placa          String                  @unique
@@ -30,18 +36,21 @@ model Vehiculo {
 }
 
 model MantenimientoVehiculo {
-  id                 String         @id @default(cuid())
-  vehiculoId         String
-  fechaMantenimiento DateTime
-  estado             EstadoVehiculo
-  rutaUbicacion      String
-  tecnicosDesignados String
-  observaciones      String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  vehiculo           Vehiculo       @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  id                  String            @id @default(cuid())
+  vehiculoId          String
+  fechaMantenimiento  DateTime
+  estado              EstadoVehiculo
+  kilometrajeOdometro Int               @default(0)
+  tipoMantenimiento   TipoMantenimiento @default(PREVENTIVO)
+  rutaUbicacion       String
+  tecnicosDesignados  String
+  observaciones       String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  vehiculo            Vehiculo          @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
 
   @@index([vehiculoId])
   @@index([estado])
+  @@index([tipoMantenimiento])
   @@index([fechaMantenimiento])
 }
