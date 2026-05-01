@@ -44,7 +44,7 @@ model MantenimientoVehiculo {
   fechaMantenimiento  DateTime
   estado              EstadoVehiculo
   kilometrajeOdometro Int               @default(0)
-  tipoMantenimiento   TipoMantenimiento @default(PREVENTIVO)
+  tipoMantenimiento   TipoMantenimiento?
   rutaUbicacion       String
   tecnicosDesignados  String
   observaciones       String?
