@@ -418,7 +418,7 @@ export default function Home() {
                 />
               </label>
               <label>
-                Ano
+                Año
                 <input
                   required
                   min="1900"
@@ -478,7 +478,7 @@ export default function Home() {
                     <th>Disco</th>
                     <th>Marca</th>
                     <th>Tipo</th>
-                    <th>Ano</th>
+                    <th>Año</th>
                     <th>CIA</th>
                     <th>Mantenimientos</th>
                     <th>Acciones</th>

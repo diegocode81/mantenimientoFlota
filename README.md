@@ -6,7 +6,7 @@ Prisma y PostgreSQL.
 ## Funciones
 
 - Pestana Flota para crear, consultar, editar y eliminar vehiculos con placa,
-  disco, marca, tipo, ano y CIA.
+  disco, marca, tipo, año y CIA.
 - Pestana Mantenimientos para seleccionar un vehiculo y registrar fecha, estado,
   kilometraje/odometro, tipo de mantenimiento, ruta/ubicacion, tecnicos
   designados y observaciones.

@@ -26,7 +26,7 @@ export async function GET() {
     "Disco",
     "Marca",
     "Tipo",
-    "Ano",
+    "Año",
     "CIA",
     "Fecha de mantenimiento",
     "Estado",

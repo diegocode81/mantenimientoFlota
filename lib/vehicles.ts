@@ -42,7 +42,7 @@ export function parseFleetInput(body: unknown): FleetInput {
 
   const ano = Number(data.ano);
   if (!Number.isInteger(ano) || ano < 1900 || ano > 2100) {
-    throw new Error("El ano debe ser un numero valido.");
+    throw new Error("El año debe ser un numero valido.");
   }
 
   return {
