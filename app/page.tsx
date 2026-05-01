@@ -25,7 +25,7 @@ type MaintenanceRecord = {
   fechaMantenimiento: string;
   estado: EstadoVehiculo;
   kilometrajeOdometro: number;
-  tipoMantenimiento: TipoMantenimiento;
+  tipoMantenimiento: TipoMantenimiento | null;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones: string | null;
@@ -92,6 +92,17 @@ function getPageRange(page: number, total: number) {
 function percent(value: number, total: number) {
   if (total === 0) return 0;
   return Math.round((value / total) * 100);
+}
+
+function formatTipoMantenimiento(
+  estado: EstadoVehiculo,
+  tipo: TipoMantenimiento | null,
+) {
+  if (estado === "OPERATIVO") return "No aplica";
+  if (tipo === "CORRECTIVO") return "Correctivo";
+  if (tipo === "PREVENTIVO") return "Preventivo";
+  if (tipo === "PROACTIVO") return "Proactivo";
+  return "No aplica";
 }
 
 export default function Home() {
@@ -188,7 +199,7 @@ export default function Home() {
             record.vehiculo.disco,
             record.vehiculo.marca,
             String(record.kilometrajeOdometro),
-            record.tipoMantenimiento,
+            formatTipoMantenimiento(record.estado, record.tipoMantenimiento),
             record.rutaUbicacion,
             record.tecnicosDesignados,
             record.observaciones ?? "",
@@ -253,12 +264,13 @@ export default function Home() {
 
     const byType = Array.from(
       maintenanceRecords.reduce((map, record) => {
-        const key =
-          record.tipoMantenimiento === "CORRECTIVO"
-            ? "Correctivo"
-            : record.tipoMantenimiento === "PREVENTIVO"
-              ? "Preventivo"
-              : "Proactivo";
+        if (record.estado === "OPERATIVO") return map;
+
+        const key = formatTipoMantenimiento(
+          record.estado,
+          record.tipoMantenimiento,
+        );
+
         map.set(key, (map.get(key) ?? 0) + 1);
         return map;
       }, new Map<string, number>()),
@@ -404,6 +416,14 @@ export default function Home() {
     setSaving(true);
     setMessage("");
 
+    const payload = {
+      ...maintenanceForm,
+      tipoMantenimiento:
+        maintenanceForm.estado === "OPERATIVO"
+          ? null
+          : maintenanceForm.tipoMantenimiento,
+    };
+
     const response = await fetch(
       editingMaintenanceId
         ? `/api/maintenance/${editingMaintenanceId}`
@@ -411,7 +431,7 @@ export default function Home() {
       {
         method: editingMaintenanceId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(maintenanceForm),
+        body: JSON.stringify(payload),
       },
     );
     const data = await response.json();
@@ -453,7 +473,7 @@ export default function Home() {
       fechaMantenimiento: dateForInput(record.fechaMantenimiento),
       estado: record.estado,
       kilometrajeOdometro: record.kilometrajeOdometro,
-      tipoMantenimiento: record.tipoMantenimiento,
+      tipoMantenimiento: record.tipoMantenimiento ?? "PREVENTIVO",
       rutaUbicacion: record.rutaUbicacion,
       tecnicosDesignados: record.tecnicosDesignados,
       observaciones: record.observaciones ?? "",
@@ -589,12 +609,20 @@ export default function Home() {
             <div className="stackedBar">
               <span
                 className="stackedOperative"
-                style={{ width: `${percent(latestStatusSummary.operative, vehicles.length)}%` }}
+                style={{
+                  width: `${percent(
+                    latestStatusSummary.operative,
+                    vehicles.length,
+                  )}%`,
+                }}
               />
               <span
                 className="stackedMaintenance"
                 style={{
-                  width: `${percent(latestStatusSummary.inMaintenance, vehicles.length)}%`,
+                  width: `${percent(
+                    latestStatusSummary.inMaintenance,
+                    vehicles.length,
+                  )}%`,
                 }}
               />
             </div>
@@ -622,7 +650,9 @@ export default function Home() {
                     <span>{value} vehiculo(s)</span>
                   </div>
                   <div className="barTrack">
-                    <span style={{ width: `${percent(value, vehicles.length)}%` }} />
+                    <span
+                      style={{ width: `${percent(value, vehicles.length)}%` }}
+                    />
                   </div>
                 </div>
               ))}
@@ -647,7 +677,9 @@ export default function Home() {
                       />
                       <span
                         className="trendOperative"
-                        style={{ height: `${percent(values.operativo, total)}%` }}
+                        style={{
+                          height: `${percent(values.operativo, total)}%`,
+                        }}
                       />
                     </div>
                     <strong>{date.slice(5)}</strong>
@@ -663,21 +695,25 @@ export default function Home() {
               <h2>Tipo de mantenimiento</h2>
             </div>
             <div className="barList">
-              {dashboardStats.byType.map(([label, value]) => (
-                <div className="barRow" key={label}>
-                  <div>
-                    <strong>{label}</strong>
-                    <span>{value} registro(s)</span>
+              {dashboardStats.byType.length === 0 ? (
+                <p>No hay mantenimientos registrados.</p>
+              ) : (
+                dashboardStats.byType.map(([label, value]) => (
+                  <div className="barRow" key={label}>
+                    <div>
+                      <strong>{label}</strong>
+                      <span>{value} registro(s)</span>
+                    </div>
+                    <div className="barTrack">
+                      <span
+                        style={{
+                          width: `${percent(value, maintenanceRecords.length)}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="barTrack">
-                    <span
-                      style={{
-                        width: `${percent(value, maintenanceRecords.length)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
 
@@ -717,7 +753,9 @@ export default function Home() {
         <section className="workspace">
           <form className="formPanel" onSubmit={submitFleet}>
             <div className="panelHeader">
-              <h2>{editingVehicleId ? "Actualizar vehiculo" : "Crear vehiculo"}</h2>
+              <h2>
+                {editingVehicleId ? "Actualizar vehiculo" : "Crear vehiculo"}
+              </h2>
               {editingVehicleId && (
                 <button
                   className="ghostButton"
@@ -777,7 +815,7 @@ export default function Home() {
                   min="1900"
                   max="2100"
                   type="number"
-                    value={fleetForm.ano}
+                  value={fleetForm.ano}
                   onChange={(event) =>
                     updateFleetField(
                       "ano",
@@ -945,8 +983,8 @@ export default function Home() {
                   <option value="">Seleccione un vehiculo</option>
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.placa ?? "Sin placa"} - {vehicle.marca ?? "Sin marca"}{" "}
-                      {vehicle.tipo}
+                      {vehicle.placa ?? "Sin placa"} -{" "}
+                      {vehicle.marca ?? "Sin marca"} {vehicle.tipo}
                     </option>
                   ))}
                 </select>
@@ -969,12 +1007,18 @@ export default function Home() {
                 Estado
                 <select
                   value={maintenanceForm.estado}
-                  onChange={(event) =>
-                    updateMaintenanceField(
-                      "estado",
-                      event.target.value as EstadoVehiculo,
-                    )
-                  }
+                  onChange={(event) => {
+                    const estado = event.target.value as EstadoVehiculo;
+
+                    setMaintenanceForm((prev) => ({
+                      ...prev,
+                      estado,
+                      tipoMantenimiento:
+                        estado === "OPERATIVO"
+                          ? "PREVENTIVO"
+                          : prev.tipoMantenimiento,
+                    }));
+                  }}
                 >
                   <option value="OPERATIVO">Operativo</option>
                   <option value="MANTENIMIENTO">Mantenimiento</option>
@@ -996,22 +1040,30 @@ export default function Home() {
                   }
                 />
               </label>
-              <label>
-                Tipo de mantenimiento
-                <select
-                  value={maintenanceForm.tipoMantenimiento}
-                  onChange={(event) =>
-                    updateMaintenanceField(
-                      "tipoMantenimiento",
-                      event.target.value as TipoMantenimiento,
-                    )
-                  }
-                >
-                  <option value="CORRECTIVO">Mantenimiento correctivo</option>
-                  <option value="PREVENTIVO">Mantenimiento preventivo</option>
-                  <option value="PROACTIVO">Mantenimiento proactivo</option>
-                </select>
-              </label>
+
+              {maintenanceForm.estado === "MANTENIMIENTO" && (
+                <label>
+                  Tipo de mantenimiento
+                  <select
+                    value={maintenanceForm.tipoMantenimiento}
+                    onChange={(event) =>
+                      updateMaintenanceField(
+                        "tipoMantenimiento",
+                        event.target.value as TipoMantenimiento,
+                      )
+                    }
+                  >
+                    <option value="CORRECTIVO">
+                      Mantenimiento correctivo
+                    </option>
+                    <option value="PREVENTIVO">
+                      Mantenimiento preventivo
+                    </option>
+                    <option value="PROACTIVO">Mantenimiento proactivo</option>
+                  </select>
+                </label>
+              )}
+
               <label>
                 Ruta / ubicacion
                 <input
@@ -1139,11 +1191,10 @@ export default function Home() {
                         </td>
                         <td>{record.kilometrajeOdometro}</td>
                         <td>
-                          {record.tipoMantenimiento === "CORRECTIVO"
-                            ? "Correctivo"
-                            : record.tipoMantenimiento === "PREVENTIVO"
-                              ? "Preventivo"
-                              : "Proactivo"}
+                          {formatTipoMantenimiento(
+                            record.estado,
+                            record.tipoMantenimiento,
+                          )}
                         </td>
                         <td>{record.rutaUbicacion}</td>
                         <td>{record.tecnicosDesignados}</td>
@@ -1172,7 +1223,9 @@ export default function Home() {
               </table>
             </div>
             <div className="paginationBar">
-              <span>{getPageRange(maintenancePage, filteredMaintenance.length)}</span>
+              <span>
+                {getPageRange(maintenancePage, filteredMaintenance.length)}
+              </span>
               <div className="paginationActions">
                 <button
                   className="ghostButton"
