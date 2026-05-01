@@ -72,8 +72,21 @@ const emptyMaintenanceForm: MaintenanceForm = {
   observaciones: "",
 };
 
+const PAGE_SIZE = 10;
+
 function dateForInput(value: string) {
   return value.slice(0, 10);
+}
+
+function getPageCount(total: number) {
+  return Math.max(1, Math.ceil(total / PAGE_SIZE));
+}
+
+function getPageRange(page: number, total: number) {
+  if (total === 0) return "0 de 0";
+  const start = (page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(page * PAGE_SIZE, total);
+  return `${start}-${end} de ${total}`;
 }
 
 export default function Home() {
@@ -95,6 +108,8 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState<"TODOS" | EstadoVehiculo>(
     "TODOS",
   );
+  const [fleetPage, setFleetPage] = useState(1);
+  const [maintenancePage, setMaintenancePage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -183,6 +198,35 @@ export default function Home() {
         .length,
     [maintenanceRecords],
   );
+
+  const fleetPageCount = getPageCount(filteredVehicles.length);
+  const maintenancePageCount = getPageCount(filteredMaintenance.length);
+
+  const paginatedVehicles = useMemo(() => {
+    const start = (fleetPage - 1) * PAGE_SIZE;
+    return filteredVehicles.slice(start, start + PAGE_SIZE);
+  }, [filteredVehicles, fleetPage]);
+
+  const paginatedMaintenance = useMemo(() => {
+    const start = (maintenancePage - 1) * PAGE_SIZE;
+    return filteredMaintenance.slice(start, start + PAGE_SIZE);
+  }, [filteredMaintenance, maintenancePage]);
+
+  useEffect(() => {
+    setFleetPage(1);
+  }, [fleetSearch]);
+
+  useEffect(() => {
+    setMaintenancePage(1);
+  }, [maintenanceSearch, statusFilter]);
+
+  useEffect(() => {
+    setFleetPage((page) => Math.min(page, fleetPageCount));
+  }, [fleetPageCount]);
+
+  useEffect(() => {
+    setMaintenancePage((page) => Math.min(page, maintenancePageCount));
+  }, [maintenancePageCount]);
 
   function updateFleetField<K extends keyof FleetForm>(
     field: K,
@@ -530,7 +574,7 @@ export default function Home() {
                       <td colSpan={8}>No hay vehiculos para mostrar.</td>
                     </tr>
                   ) : (
-                    filteredVehicles.map((vehicle) => (
+                    paginatedVehicles.map((vehicle) => (
                       <tr key={vehicle.id}>
                         <td>
                           <strong className="primaryCell">
@@ -565,6 +609,30 @@ export default function Home() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="paginationBar">
+              <span>{getPageRange(fleetPage, filteredVehicles.length)}</span>
+              <div className="paginationActions">
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={fleetPage <= 1}
+                  onClick={() => setFleetPage((page) => page - 1)}
+                >
+                  Anterior
+                </button>
+                <strong>
+                  Pagina {fleetPage} de {fleetPageCount}
+                </strong>
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={fleetPage >= fleetPageCount}
+                  onClick={() => setFleetPage((page) => page + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           </section>
         </section>
@@ -768,7 +836,7 @@ export default function Home() {
                       <td colSpan={10}>No hay mantenimientos para mostrar.</td>
                     </tr>
                   ) : (
-                    filteredMaintenance.map((record) => (
+                    paginatedMaintenance.map((record) => (
                       <tr key={record.id}>
                         <td>
                           <strong className="primaryCell">
@@ -820,6 +888,30 @@ export default function Home() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="paginationBar">
+              <span>{getPageRange(maintenancePage, filteredMaintenance.length)}</span>
+              <div className="paginationActions">
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={maintenancePage <= 1}
+                  onClick={() => setMaintenancePage((page) => page - 1)}
+                >
+                  Anterior
+                </button>
+                <strong>
+                  Pagina {maintenancePage} de {maintenancePageCount}
+                </strong>
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={maintenancePage >= maintenancePageCount}
+                  onClick={() => setMaintenancePage((page) => page + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           </section>
         </section>
