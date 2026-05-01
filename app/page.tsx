@@ -202,7 +202,7 @@ export default function Home() {
       );
   }, [maintenanceRecords, maintenanceSearch, maintenanceDate, statusFilter]);
 
-  const maintenanceInShop = useMemo(() => {
+  const latestStatusSummary = useMemo(() => {
     const latestByVehicle = new Map<string, MaintenanceRecord>();
 
     for (const record of maintenanceRecords) {
@@ -216,9 +216,15 @@ export default function Home() {
       }
     }
 
-    return Array.from(latestByVehicle.values()).filter(
+    const latestRecords = Array.from(latestByVehicle.values());
+    const inMaintenance = latestRecords.filter(
       (record) => record.estado === "MANTENIMIENTO",
     ).length;
+    const operative = latestRecords.filter(
+      (record) => record.estado === "OPERATIVO",
+    ).length;
+
+    return { inMaintenance, operative };
   }, [maintenanceRecords]);
 
   const fleetPageCount = getPageCount(filteredVehicles.length);
@@ -450,12 +456,16 @@ export default function Home() {
           <strong>{vehicles.length}</strong>
         </div>
         <div className="metricItem">
-          <span>Mantenimientos</span>
+          <span>Total de Mantenimientos</span>
           <strong>{maintenanceRecords.length}</strong>
         </div>
         <div className="metricItem">
           <span>En mantenimiento</span>
-          <strong>{maintenanceInShop}</strong>
+          <strong>{latestStatusSummary.inMaintenance}</strong>
+        </div>
+        <div className="metricItem">
+          <span>Operativos</span>
+          <strong>{latestStatusSummary.operative}</strong>
         </div>
       </section>
 
