@@ -14,7 +14,7 @@ export type MaintenanceInput = {
   fechaMantenimiento: Date;
   estado: EstadoVehiculo;
   kilometrajeOdometro: number;
-  tipoMantenimiento: TipoMantenimiento;
+  tipoMantenimiento: TipoMantenimiento | null;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones?: string | null;
@@ -81,12 +81,14 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     throw new Error("El estado debe ser operativo o mantenimiento.");
   }
 
-  if (
-    data.tipoMantenimiento !== TipoMantenimiento.CORRECTIVO &&
-    data.tipoMantenimiento !== TipoMantenimiento.PREVENTIVO &&
-    data.tipoMantenimiento !== TipoMantenimiento.PROACTIVO
-  ) {
-    throw new Error("El tipo de mantenimiento no es valido.");
+  if (data.estado === EstadoVehiculo.MANTENIMIENTO) {
+    if (
+      data.tipoMantenimiento !== TipoMantenimiento.CORRECTIVO &&
+      data.tipoMantenimiento !== TipoMantenimiento.PREVENTIVO &&
+      data.tipoMantenimiento !== TipoMantenimiento.PROACTIVO
+    ) {
+      throw new Error("El tipo de mantenimiento no es valido.");
+    }
   }
 
   if (typeof data.fechaMantenimiento !== "string" || !data.fechaMantenimiento) {
@@ -103,7 +105,8 @@ export function parseMaintenanceInput(body: unknown): MaintenanceInput {
     fechaMantenimiento,
     estado: data.estado,
     kilometrajeOdometro,
-    tipoMantenimiento: data.tipoMantenimiento,
+    tipoMantenimiento:
+      data.estado === EstadoVehiculo.OPERATIVO ? null : data.tipoMantenimiento,
     rutaUbicacion,
     tecnicosDesignados,
     observaciones:
