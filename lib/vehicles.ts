@@ -1,46 +1,67 @@
 import { EstadoVehiculo } from "@prisma/client";
 
-export type VehicleInput = {
+export type FleetInput = {
   placa: string;
   disco: string;
   marca: string;
   tipo: string;
   ano: number;
   cia: string;
-  fechaMantenimiento: Date;
-  estado: EstadoVehiculo;
-  observaciones?: string | null;
-  rutaUbicacion: string;
-  tecnicosDesignados: string;
 };
 
-const requiredStringFields = [
-  "placa",
-  "disco",
-  "marca",
-  "tipo",
-  "cia",
-  "rutaUbicacion",
-  "tecnicosDesignados",
-] as const;
+export type MaintenanceInput = {
+  vehiculoId: string;
+  fechaMantenimiento: Date;
+  estado: EstadoVehiculo;
+  rutaUbicacion: string;
+  tecnicosDesignados: string;
+  observaciones?: string | null;
+};
 
-export function parseVehicleInput(body: unknown): VehicleInput {
+const fleetFields = ["placa", "disco", "marca", "tipo", "cia"] as const;
+
+function requireText(data: Record<string, unknown>, field: string) {
+  if (typeof data[field] !== "string" || !data[field].trim()) {
+    throw new Error(`El campo ${field} es obligatorio.`);
+  }
+
+  return data[field].trim();
+}
+
+export function parseFleetInput(body: unknown): FleetInput {
   if (!body || typeof body !== "object") {
-    throw new Error("Datos inválidos.");
+    throw new Error("Datos invalidos.");
   }
 
   const data = body as Record<string, unknown>;
-
-  for (const field of requiredStringFields) {
-    if (typeof data[field] !== "string" || !data[field].trim()) {
-      throw new Error(`El campo ${field} es obligatorio.`);
-    }
+  for (const field of fleetFields) {
+    requireText(data, field);
   }
 
   const ano = Number(data.ano);
   if (!Number.isInteger(ano) || ano < 1900 || ano > 2100) {
-    throw new Error("El año debe ser un número válido.");
+    throw new Error("El ano debe ser un numero valido.");
   }
+
+  return {
+    placa: requireText(data, "placa").toUpperCase(),
+    disco: requireText(data, "disco"),
+    marca: requireText(data, "marca"),
+    tipo: requireText(data, "tipo"),
+    ano,
+    cia: requireText(data, "cia"),
+  };
+}
+
+export function parseMaintenanceInput(body: unknown): MaintenanceInput {
+  if (!body || typeof body !== "object") {
+    throw new Error("Datos invalidos.");
+  }
+
+  const data = body as Record<string, unknown>;
+  const vehiculoId = requireText(data, "vehiculoId");
+  const rutaUbicacion = requireText(data, "rutaUbicacion");
+  const tecnicosDesignados = requireText(data, "tecnicosDesignados");
 
   if (
     data.estado !== EstadoVehiculo.OPERATIVO &&
@@ -55,23 +76,18 @@ export function parseVehicleInput(body: unknown): VehicleInput {
 
   const fechaMantenimiento = new Date(`${data.fechaMantenimiento}T00:00:00`);
   if (Number.isNaN(fechaMantenimiento.getTime())) {
-    throw new Error("La fecha de mantenimiento no es válida.");
+    throw new Error("La fecha de mantenimiento no es valida.");
   }
 
   return {
-    placa: String(data.placa).trim().toUpperCase(),
-    disco: String(data.disco).trim(),
-    marca: String(data.marca).trim(),
-    tipo: String(data.tipo).trim(),
-    ano,
-    cia: String(data.cia).trim(),
+    vehiculoId,
     fechaMantenimiento,
     estado: data.estado,
+    rutaUbicacion,
+    tecnicosDesignados,
     observaciones:
       typeof data.observaciones === "string" && data.observaciones.trim()
         ? data.observaciones.trim()
         : null,
-    rutaUbicacion: String(data.rutaUbicacion).trim(),
-    tecnicosDesignados: String(data.tecnicosDesignados).trim(),
   };
 }

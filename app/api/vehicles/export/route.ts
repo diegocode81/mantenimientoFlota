@@ -16,8 +16,9 @@ function cell(value: string | number) {
 }
 
 export async function GET() {
-  const vehicles = await prisma.vehiculoMantenimiento.findMany({
+  const records = await prisma.mantenimientoVehiculo.findMany({
     orderBy: [{ fechaMantenimiento: "desc" }, { createdAt: "desc" }],
+    include: { vehiculo: true },
   });
 
   const headers = [
@@ -34,20 +35,20 @@ export async function GET() {
     "Tecnicos designados",
   ];
 
-  const rows = vehicles
-    .map((vehicle) => {
+  const rows = records
+    .map((record) => {
       const values = [
-        vehicle.placa,
-        vehicle.disco,
-        vehicle.marca,
-        vehicle.tipo,
-        vehicle.ano,
-        vehicle.cia,
-        vehicle.fechaMantenimiento.toISOString().slice(0, 10),
-        vehicle.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Operativo",
-        vehicle.observaciones ?? "",
-        vehicle.rutaUbicacion,
-        vehicle.tecnicosDesignados,
+        record.vehiculo.placa,
+        record.vehiculo.disco,
+        record.vehiculo.marca,
+        record.vehiculo.tipo,
+        record.vehiculo.ano,
+        record.vehiculo.cia,
+        record.fechaMantenimiento.toISOString().slice(0, 10),
+        record.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Operativo",
+        record.observaciones ?? "",
+        record.rutaUbicacion,
+        record.tecnicosDesignados,
       ];
 
       return `<Row>${values.map(cell).join("")}</Row>`;

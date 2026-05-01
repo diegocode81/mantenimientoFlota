@@ -5,12 +5,15 @@ Prisma y PostgreSQL.
 
 ## Funciones
 
-- Crear registros con placa, disco, marca, tipo, ano, CIA, fecha, estado,
-  observaciones, ruta/ubicacion y tecnicos designados.
-- Editar y eliminar registros.
+- Pestana Flota para crear, consultar, editar y eliminar vehiculos con placa,
+  disco, marca, tipo, ano y CIA.
+- Pestana Mantenimientos para seleccionar un vehiculo y registrar fecha, estado,
+  ruta/ubicacion, tecnicos designados y observaciones.
+- Editar y eliminar vehiculos o mantenimientos por separado.
 - Buscar por placa, marca, ruta, tecnicos y otros campos principales.
 - Filtrar por estado operativo o mantenimiento.
-- Descargar un archivo Excel compatible (`.xls`) con todos los datos.
+- Descargar un archivo Excel compatible (`.xls`) con el historial de
+  mantenimientos y los datos del vehiculo.
 
 ## Configuracion local
 
@@ -26,7 +29,7 @@ npm install
 cp .env.example .env
 ```
 
-3. Coloca tu cadena PostgreSQL en `DATABASE_URL`.
+3. Coloca tus cadenas PostgreSQL en `DATABASE_URL` y `DIRECT_URL`.
 
 4. Ejecuta la migracion:
 
@@ -47,7 +50,7 @@ La app queda disponible normalmente en `http://localhost:3000`.
 1. Sube este repositorio a GitHub.
 2. Crea el proyecto en Vercel importando el repositorio.
 3. Crea o conecta una base PostgreSQL y copia su connection string.
-4. Agrega en Vercel la variable de entorno `DATABASE_URL`.
+4. Agrega en Vercel las variables de entorno `DATABASE_URL` y `DIRECT_URL`.
 5. Usa estos comandos:
 
 ```text

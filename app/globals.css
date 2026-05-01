@@ -136,6 +136,28 @@ h2 {
   gap: 18px;
 }
 
+.tabs {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+}
+
+.tabs button {
+  background: transparent;
+  color: var(--muted);
+  min-width: 150px;
+}
+
+.tabs button:hover,
+.tabs .activeTab {
+  background: var(--primary);
+  color: #fff;
+}
+
 .formPanel,
 .recordsPanel {
   background: var(--surface);
@@ -216,6 +238,10 @@ h2 {
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(220px, 360px) 180px;
+}
+
+.singleFilter {
+  grid-template-columns: minmax(220px, 360px);
 }
 
 .tableWrap {
@@ -309,8 +335,19 @@ td {
   }
 
   .formGrid,
-  .filters {
+  .filters,
+  .singleFilter {
     grid-template-columns: 1fr;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .tabs button {
+    width: 100%;
   }
 
   .wideField {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { parseFleetInput } from "@/lib/vehicles";
+import { parseMaintenanceInput } from "@/lib/vehicles";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -10,13 +10,14 @@ export async function PUT(request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   try {
-    const data = parseFleetInput(await request.json());
-    const vehicle = await prisma.vehiculo.update({
+    const data = parseMaintenanceInput(await request.json());
+    const record = await prisma.mantenimientoVehiculo.update({
       where: { id },
       data,
+      include: { vehiculo: true },
     });
 
-    return NextResponse.json(vehicle);
+    return NextResponse.json(record);
   } catch (error) {
     return NextResponse.json(
       {
@@ -32,11 +33,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
   try {
-    await prisma.vehiculo.delete({ where: { id } });
+    await prisma.mantenimientoVehiculo.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
-      { error: "No se pudo eliminar el registro." },
+      { error: "No se pudo eliminar el mantenimiento." },
       { status: 400 },
     );
   }
