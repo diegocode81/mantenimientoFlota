@@ -202,12 +202,24 @@ export default function Home() {
       );
   }, [maintenanceRecords, maintenanceSearch, maintenanceDate, statusFilter]);
 
-  const maintenanceInShop = useMemo(
-    () =>
-      maintenanceRecords.filter((record) => record.estado === "MANTENIMIENTO")
-        .length,
-    [maintenanceRecords],
-  );
+  const maintenanceInShop = useMemo(() => {
+    const latestByVehicle = new Map<string, MaintenanceRecord>();
+
+    for (const record of maintenanceRecords) {
+      const current = latestByVehicle.get(record.vehiculoId);
+      if (
+        !current ||
+        new Date(record.fechaMantenimiento).getTime() >
+          new Date(current.fechaMantenimiento).getTime()
+      ) {
+        latestByVehicle.set(record.vehiculoId, record);
+      }
+    }
+
+    return Array.from(latestByVehicle.values()).filter(
+      (record) => record.estado === "MANTENIMIENTO",
+    ).length;
+  }, [maintenanceRecords]);
 
   const fleetPageCount = getPageCount(filteredVehicles.length);
   const maintenancePageCount = getPageCount(filteredMaintenance.length);
