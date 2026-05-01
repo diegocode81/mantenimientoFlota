@@ -40,12 +40,12 @@ export async function GET() {
   const rows = records
     .map((record) => {
       const values = [
-        record.vehiculo.placa,
-        record.vehiculo.disco,
-        record.vehiculo.marca,
+        record.vehiculo.placa ?? "",
+        record.vehiculo.disco ?? "",
+        record.vehiculo.marca ?? "",
         record.vehiculo.tipo,
-        record.vehiculo.ano,
-        record.vehiculo.cia,
+        record.vehiculo.ano ?? "",
+        record.vehiculo.cia ?? "",
         record.fechaMantenimiento.toISOString().slice(0, 10),
         record.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Operativo",
         record.kilometrajeOdometro,

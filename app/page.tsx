@@ -8,12 +8,14 @@ type Tab = "FLOTA" | "MANTENIMIENTOS";
 
 type FleetVehicle = {
   id: string;
-  placa: string;
-  disco: string;
-  marca: string;
+  itemOrigen: string | null;
+  placa: string | null;
+  disco: string | null;
+  marca: string | null;
   tipo: string;
-  ano: number;
-  cia: string;
+  ano: number | null;
+  anoOriginal: string | null;
+  cia: string | null;
   _count?: { mantenimientos: number };
 };
 
@@ -30,7 +32,14 @@ type MaintenanceRecord = {
   vehiculo: FleetVehicle;
 };
 
-type FleetForm = Omit<FleetVehicle, "id" | "_count">;
+type FleetForm = {
+  placa: string;
+  disco: string;
+  marca: string;
+  tipo: string;
+  ano: number | "";
+  cia: string;
+};
 
 type MaintenanceForm = {
   vehiculoId: string;
@@ -134,6 +143,7 @@ export default function Home() {
         vehicle.tipo,
         vehicle.cia,
       ]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(term),
@@ -158,6 +168,7 @@ export default function Home() {
           record.tecnicosDesignados,
           record.observaciones ?? "",
         ]
+          .filter(Boolean)
           .join(" ")
           .toLowerCase()
           .includes(term);
@@ -269,12 +280,12 @@ export default function Home() {
   function startFleetEdit(vehicle: FleetVehicle) {
     setEditingVehicleId(vehicle.id);
     setFleetForm({
-      placa: vehicle.placa,
-      disco: vehicle.disco,
-      marca: vehicle.marca,
+      placa: vehicle.placa ?? "",
+      disco: vehicle.disco ?? "",
+      marca: vehicle.marca ?? "",
       tipo: vehicle.tipo,
-      ano: vehicle.ano,
-      cia: vehicle.cia,
+      ano: vehicle.ano ?? "",
+      cia: vehicle.cia ?? "",
     });
     setActiveTab("FLOTA");
     setMessage("Editando vehiculo seleccionado.");
@@ -300,7 +311,7 @@ export default function Home() {
 
   async function deleteVehicle(vehicle: FleetVehicle) {
     const confirmed = window.confirm(
-      `Eliminar el vehiculo ${vehicle.placa}? Tambien se eliminaran sus mantenimientos.`,
+      `Eliminar el vehiculo ${vehicle.placa ?? "sin placa"}? Tambien se eliminaran sus mantenimientos.`,
     );
     if (!confirmed) return;
 
@@ -320,7 +331,7 @@ export default function Home() {
 
   async function deleteMaintenance(record: MaintenanceRecord) {
     const confirmed = window.confirm(
-      `Eliminar el mantenimiento de ${record.vehiculo.placa}?`,
+      `Eliminar el mantenimiento de ${record.vehiculo.placa ?? "sin placa"}?`,
     );
     if (!confirmed) return;
 
@@ -446,9 +457,12 @@ export default function Home() {
                   min="1900"
                   max="2100"
                   type="number"
-                  value={fleetForm.ano}
+                    value={fleetForm.ano}
                   onChange={(event) =>
-                    updateFleetField("ano", Number(event.target.value))
+                    updateFleetField(
+                      "ano",
+                      event.target.value ? Number(event.target.value) : "",
+                    )
                   }
                 />
               </label>
@@ -519,13 +533,15 @@ export default function Home() {
                     filteredVehicles.map((vehicle) => (
                       <tr key={vehicle.id}>
                         <td>
-                          <strong className="primaryCell">{vehicle.placa}</strong>
+                          <strong className="primaryCell">
+                            {vehicle.placa ?? ""}
+                          </strong>
                         </td>
-                        <td>{vehicle.disco}</td>
-                        <td>{vehicle.marca}</td>
+                        <td>{vehicle.disco ?? ""}</td>
+                        <td>{vehicle.marca ?? ""}</td>
                         <td>{vehicle.tipo}</td>
-                        <td>{vehicle.ano}</td>
-                        <td>{vehicle.cia}</td>
+                        <td>{vehicle.ano ?? ""}</td>
+                        <td>{vehicle.cia ?? ""}</td>
                         <td>{vehicle._count?.mantenimientos ?? 0}</td>
                         <td>
                           <div className="rowActions">
@@ -585,7 +601,8 @@ export default function Home() {
                   <option value="">Seleccione un vehiculo</option>
                   {vehicles.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.placa} - {vehicle.marca} {vehicle.tipo}
+                      {vehicle.placa ?? "Sin placa"} - {vehicle.marca ?? "Sin marca"}{" "}
+                      {vehicle.tipo}
                     </option>
                   ))}
                 </select>
@@ -755,13 +772,13 @@ export default function Home() {
                       <tr key={record.id}>
                         <td>
                           <strong className="primaryCell">
-                            {record.vehiculo.placa}
+                            {record.vehiculo.placa ?? ""}
                           </strong>
                           <span className="secondaryCell">
-                            {record.vehiculo.marca}
+                            {record.vehiculo.marca ?? ""}
                           </span>
                         </td>
-                        <td>{record.vehiculo.disco}</td>
+                        <td>{record.vehiculo.disco ?? ""}</td>
                         <td>{dateForInput(record.fechaMantenimiento)}</td>
                         <td>
                           <span className={`badge ${record.estado}`}>

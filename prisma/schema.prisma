@@ -21,16 +21,19 @@ enum TipoMantenimiento {
 
 model Vehiculo {
   id             String                  @id @default(cuid())
-  placa          String                  @unique
-  disco          String
-  marca          String
+  itemOrigen     String?
+  placa          String?                 @unique
+  disco          String?
+  marca          String?
   tipo           String
-  ano            Int
-  cia            String
+  ano            Int?
+  anoOriginal    String?
+  cia            String?
   mantenimientos MantenimientoVehiculo[]
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
+  @@index([itemOrigen])
   @@index([marca])
   @@index([cia])
 }
