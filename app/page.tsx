@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type EstadoVehiculo = "OPERATIVO" | "MANTENIMIENTO";
 type TipoMantenimiento = "CORRECTIVO" | "PREVENTIVO" | "PROACTIVO";
-type Tab = "FLOTA" | "MANTENIMIENTOS";
+type Tab = "FLOTA" | "MANTENIMIENTOS" | "DASHBOARD";
 
 type FleetVehicle = {
   id: string;
@@ -87,6 +87,11 @@ function getPageRange(page: number, total: number) {
   const start = (page - 1) * PAGE_SIZE + 1;
   const end = Math.min(page * PAGE_SIZE, total);
   return `${start}-${end} de ${total}`;
+}
+
+function percent(value: number, total: number) {
+  if (total === 0) return 0;
+  return Math.round((value / total) * 100);
 }
 
 export default function Home() {
@@ -202,7 +207,7 @@ export default function Home() {
       );
   }, [maintenanceRecords, maintenanceSearch, maintenanceDate, statusFilter]);
 
-  const latestStatusSummary = useMemo(() => {
+  const latestVehicleRecords = useMemo(() => {
     const latestByVehicle = new Map<string, MaintenanceRecord>();
 
     for (const record of maintenanceRecords) {
@@ -216,16 +221,93 @@ export default function Home() {
       }
     }
 
-    const latestRecords = Array.from(latestByVehicle.values());
-    const inMaintenance = latestRecords.filter(
+    return Array.from(latestByVehicle.values());
+  }, [maintenanceRecords]);
+
+  const latestStatusSummary = useMemo(() => {
+    const inMaintenance = latestVehicleRecords.filter(
       (record) => record.estado === "MANTENIMIENTO",
     ).length;
-    const operative = latestRecords.filter(
+    const operative = latestVehicleRecords.filter(
       (record) => record.estado === "OPERATIVO",
     ).length;
 
     return { inMaintenance, operative };
-  }, [maintenanceRecords]);
+  }, [latestVehicleRecords]);
+
+  const dashboardStats = useMemo(() => {
+    const latestDate =
+      latestVehicleRecords
+        .map((record) => dateForInput(record.fechaMantenimiento))
+        .sort()
+        .at(-1) ?? "";
+    const availability = percent(latestStatusSummary.operative, vehicles.length);
+
+    const byCia = Array.from(
+      vehicles.reduce((map, vehicle) => {
+        const key = vehicle.cia || "Sin CIA";
+        map.set(key, (map.get(key) ?? 0) + 1);
+        return map;
+      }, new Map<string, number>()),
+    ).sort((a, b) => b[1] - a[1]);
+
+    const byType = Array.from(
+      maintenanceRecords.reduce((map, record) => {
+        const key =
+          record.tipoMantenimiento === "CORRECTIVO"
+            ? "Correctivo"
+            : record.tipoMantenimiento === "PREVENTIVO"
+              ? "Preventivo"
+              : "Proactivo";
+        map.set(key, (map.get(key) ?? 0) + 1);
+        return map;
+      }, new Map<string, number>()),
+    ).sort((a, b) => b[1] - a[1]);
+
+    const trend = Array.from(
+      maintenanceRecords.reduce((map, record) => {
+        const key = dateForInput(record.fechaMantenimiento);
+        const current = map.get(key) ?? { operativo: 0, mantenimiento: 0 };
+        if (record.estado === "OPERATIVO") current.operativo += 1;
+        if (record.estado === "MANTENIMIENTO") current.mantenimiento += 1;
+        map.set(key, current);
+        return map;
+      }, new Map<string, { operativo: number; mantenimiento: number }>()),
+    ).sort((a, b) => a[0].localeCompare(b[0]));
+
+    const topObservations = Array.from(
+      maintenanceRecords.reduce((map, record) => {
+        const key = record.observaciones?.trim();
+        if (!key) return map;
+        map.set(key, (map.get(key) ?? 0) + 1);
+        return map;
+      }, new Map<string, number>()),
+    )
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const latestMaintenanceVehicles = latestVehicleRecords
+      .filter((record) => record.estado === "MANTENIMIENTO")
+      .sort((a, b) =>
+        (a.vehiculo.placa ?? "").localeCompare(b.vehiculo.placa ?? ""),
+      )
+      .slice(0, 8);
+
+    return {
+      availability,
+      byCia,
+      byType,
+      latestDate,
+      latestMaintenanceVehicles,
+      topObservations,
+      trend,
+    };
+  }, [
+    latestStatusSummary.operative,
+    latestVehicleRecords,
+    maintenanceRecords,
+    vehicles,
+  ]);
 
   const fleetPageCount = getPageCount(filteredVehicles.length);
   const maintenancePageCount = getPageCount(filteredMaintenance.length);
@@ -455,6 +537,13 @@ export default function Home() {
         >
           Mantenimientos
         </button>
+        <button
+          className={activeTab === "DASHBOARD" ? "activeTab" : ""}
+          type="button"
+          onClick={() => setActiveTab("DASHBOARD")}
+        >
+          Dashboard
+        </button>
       </nav>
 
       <section className="metricStrip" aria-label="Resumen operativo">
@@ -476,7 +565,155 @@ export default function Home() {
         </div>
       </section>
 
-      {activeTab === "FLOTA" ? (
+      {activeTab === "DASHBOARD" ? (
+        <section className="dashboardGrid">
+          <section className="dashboardHero">
+            <div>
+              <p className="eyebrow">Vista gerencial</p>
+              <h2>Disponibilidad actual de la flota</h2>
+              <p>
+                Ultima fecha cargada:{" "}
+                <strong>{dashboardStats.latestDate || "Sin datos"}</strong>
+              </p>
+            </div>
+            <div className="availabilityGauge">
+              <strong>{dashboardStats.availability}%</strong>
+              <span>operatividad</span>
+            </div>
+          </section>
+
+          <section className="dashboardPanel">
+            <div className="panelHeader">
+              <h2>Estado actual</h2>
+            </div>
+            <div className="stackedBar">
+              <span
+                className="stackedOperative"
+                style={{ width: `${percent(latestStatusSummary.operative, vehicles.length)}%` }}
+              />
+              <span
+                className="stackedMaintenance"
+                style={{
+                  width: `${percent(latestStatusSummary.inMaintenance, vehicles.length)}%`,
+                }}
+              />
+            </div>
+            <div className="legendGrid">
+              <span>
+                <b className="legendDot operativeDot" /> Operativos:{" "}
+                {latestStatusSummary.operative}
+              </span>
+              <span>
+                <b className="legendDot maintenanceDot" /> En mantenimiento:{" "}
+                {latestStatusSummary.inMaintenance}
+              </span>
+            </div>
+          </section>
+
+          <section className="dashboardPanel">
+            <div className="panelHeader">
+              <h2>Flota por CIA</h2>
+            </div>
+            <div className="barList">
+              {dashboardStats.byCia.map(([label, value]) => (
+                <div className="barRow" key={label}>
+                  <div>
+                    <strong>{label}</strong>
+                    <span>{value} vehiculo(s)</span>
+                  </div>
+                  <div className="barTrack">
+                    <span style={{ width: `${percent(value, vehicles.length)}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="dashboardPanel wideDashboardPanel">
+            <div className="panelHeader">
+              <h2>Tendencia diaria de estado</h2>
+            </div>
+            <div className="trendGrid">
+              {dashboardStats.trend.map(([date, values]) => {
+                const total = values.operativo + values.mantenimiento;
+                return (
+                  <div className="trendColumn" key={date}>
+                    <div className="trendBars">
+                      <span
+                        className="trendMaintenance"
+                        style={{
+                          height: `${percent(values.mantenimiento, total)}%`,
+                        }}
+                      />
+                      <span
+                        className="trendOperative"
+                        style={{ height: `${percent(values.operativo, total)}%` }}
+                      />
+                    </div>
+                    <strong>{date.slice(5)}</strong>
+                    <span>{values.mantenimiento} mant.</span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="dashboardPanel">
+            <div className="panelHeader">
+              <h2>Tipo de mantenimiento</h2>
+            </div>
+            <div className="barList">
+              {dashboardStats.byType.map(([label, value]) => (
+                <div className="barRow" key={label}>
+                  <div>
+                    <strong>{label}</strong>
+                    <span>{value} registro(s)</span>
+                  </div>
+                  <div className="barTrack">
+                    <span
+                      style={{
+                        width: `${percent(value, maintenanceRecords.length)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="dashboardPanel">
+            <div className="panelHeader">
+              <h2>Principales observaciones</h2>
+            </div>
+            <div className="insightList">
+              {dashboardStats.topObservations.length === 0 ? (
+                <p>No hay observaciones registradas.</p>
+              ) : (
+                dashboardStats.topObservations.map(([label, value]) => (
+                  <div className="insightItem" key={label}>
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="dashboardPanel wideDashboardPanel">
+            <div className="panelHeader">
+              <h2>Unidades actualmente en mantenimiento</h2>
+            </div>
+            <div className="vehiclePillGrid">
+              {dashboardStats.latestMaintenanceVehicles.map((record) => (
+                <span className="vehiclePill" key={record.id}>
+                  <strong>{record.vehiculo.placa ?? "Sin placa"}</strong>
+                  {record.observaciones || record.rutaUbicacion || "Sin detalle"}
+                </span>
+              ))}
+            </div>
+          </section>
+        </section>
+      ) : activeTab === "FLOTA" ? (
         <section className="workspace">
           <form className="formPanel" onSubmit={submitFleet}>
             <div className="panelHeader">

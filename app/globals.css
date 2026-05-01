@@ -245,6 +245,240 @@ h2 {
   gap: 18px;
 }
 
+.dashboardGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboardHero,
+.dashboardPanel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.dashboardHero {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  padding: 22px;
+}
+
+.dashboardHero h2 {
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  margin-bottom: 8px;
+}
+
+.dashboardHero p {
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+.availabilityGauge {
+  align-items: center;
+  background: var(--primary-soft);
+  border: 1px solid #b8dbd5;
+  border-radius: 8px;
+  color: var(--primary-dark);
+  display: grid;
+  justify-items: center;
+  min-width: 170px;
+  padding: 20px;
+}
+
+.availabilityGauge strong {
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.availabilityGauge span {
+  color: #475467;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.dashboardPanel {
+  overflow: hidden;
+  padding: 18px;
+}
+
+.dashboardPanel .panelHeader {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+}
+
+.wideDashboardPanel {
+  grid-column: 1 / -1;
+}
+
+.stackedBar {
+  background: var(--surface-strong);
+  border-radius: 999px;
+  display: flex;
+  height: 18px;
+  overflow: hidden;
+}
+
+.stackedBar span {
+  display: block;
+  min-width: 2px;
+}
+
+.stackedOperative,
+.trendOperative {
+  background: var(--success);
+}
+
+.stackedMaintenance,
+.trendMaintenance {
+  background: var(--warning);
+}
+
+.legendGrid {
+  color: #344054;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.legendDot {
+  border-radius: 999px;
+  display: inline-block;
+  height: 10px;
+  margin-right: 6px;
+  width: 10px;
+}
+
+.operativeDot {
+  background: var(--success);
+}
+
+.maintenanceDot {
+  background: var(--warning);
+}
+
+.barList,
+.insightList {
+  display: grid;
+  gap: 14px;
+}
+
+.barRow {
+  display: grid;
+  gap: 8px;
+}
+
+.barRow > div:first-child {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.barRow strong,
+.insightItem strong,
+.vehiclePill strong {
+  color: var(--text);
+}
+
+.barRow span,
+.insightItem span {
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.barTrack {
+  background: var(--surface-strong);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.barTrack span {
+  background: var(--primary);
+  display: block;
+  height: 100%;
+}
+
+.trendGrid {
+  align-items: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  min-height: 220px;
+}
+
+.trendColumn {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.trendBars {
+  align-items: flex-end;
+  background: var(--surface-strong);
+  border-radius: 8px;
+  display: flex;
+  gap: 4px;
+  height: 150px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 8px;
+  width: 54px;
+}
+
+.trendBars span {
+  border-radius: 999px 999px 0 0;
+  min-height: 2px;
+  width: 18px;
+}
+
+.trendColumn strong {
+  font-size: 0.82rem;
+}
+
+.trendColumn > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.insightItem {
+  align-items: start;
+  border-bottom: 1px solid var(--line-soft);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 44px 1fr;
+  padding-bottom: 12px;
+}
+
+.insightItem:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.vehiclePillGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.vehiclePill {
+  background: var(--warning-bg);
+  border: 1px solid #f6d99e;
+  border-radius: 8px;
+  color: #7a4a00;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
 .formPanel,
 .recordsPanel {
   background: var(--surface);
@@ -522,10 +756,21 @@ tbody tr:last-child td {
   }
 
   .metricStrip,
+  .dashboardGrid,
   .formGrid,
   .filters,
   .singleFilter {
     grid-template-columns: 1fr;
+  }
+
+  .dashboardHero,
+  .legendGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardHero {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .tabs {
