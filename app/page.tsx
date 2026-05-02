@@ -8,7 +8,8 @@ type TipoMantenimiento =
   | "CORRECTIVO"
   | "PREVENTIVO"
   | "PROACTIVO";
-type Tab = "FLOTA" | "MANTENIMIENTOS" | "DASHBOARD";
+type RolUsuario = "ADMINISTRADOR" | "ANALISTA";
+type Tab = "FLOTA" | "MANTENIMIENTOS" | "DASHBOARD" | "ADMINISTRACION";
 
 type FleetVehicle = {
   id: string;
@@ -37,6 +38,13 @@ type MaintenanceRecord = {
   vehiculo: FleetVehicle;
 };
 
+type SystemUser = {
+  id: string;
+  usuario: string;
+  rol: RolUsuario;
+  createdAt: string;
+};
+
 type FleetForm = {
   placa: string;
   disco: string;
@@ -58,6 +66,12 @@ type MaintenanceForm = {
   observaciones: string;
 };
 
+type UserForm = {
+  usuario: string;
+  password: string;
+  rol: RolUsuario;
+};
+
 const emptyFleetForm: FleetForm = {
   placa: "",
   disco: "",
@@ -77,6 +91,12 @@ const emptyMaintenanceForm: MaintenanceForm = {
   rutaUbicacion: "",
   tecnicosDesignados: "",
   observaciones: "",
+};
+
+const emptyUserForm: UserForm = {
+  usuario: "",
+  password: "",
+  rol: "ANALISTA",
 };
 
 const PAGE_SIZE = 10;
@@ -130,6 +150,7 @@ export default function Home() {
   const [maintenanceRecords, setMaintenanceRecords] = useState<
     MaintenanceRecord[]
   >([]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
   const [fleetForm, setFleetForm] = useState<FleetForm>(emptyFleetForm);
   const [maintenanceForm, setMaintenanceForm] =
     useState<MaintenanceForm>(emptyMaintenanceForm);
@@ -148,16 +169,20 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
 
   async function loadData() {
     setLoading(true);
-    const [vehiclesResponse, maintenanceResponse] = await Promise.all([
+    const [vehiclesResponse, maintenanceResponse, usersResponse] =
+      await Promise.all([
       fetch("/api/vehicles"),
       fetch("/api/maintenance"),
+      fetch("/api/users"),
     ]);
-    const [vehiclesData, maintenanceData] = await Promise.all([
+    const [vehiclesData, maintenanceData, usersData] = await Promise.all([
       vehiclesResponse.json(),
       maintenanceResponse.json(),
+      usersResponse.json(),
     ]);
     setLoading(false);
 
@@ -173,8 +198,14 @@ export default function Home() {
       return;
     }
 
+    if (!usersResponse.ok) {
+      setMessage(usersData.error ?? "No se pudieron cargar los usuarios.");
+      return;
+    }
+
     setVehicles(vehiclesData);
     setMaintenanceRecords(maintenanceData);
+    setUsers(usersData);
   }
 
   useEffect(() => {
@@ -407,6 +438,13 @@ export default function Home() {
     setMaintenanceForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updateUserField<K extends keyof UserForm>(
+    field: K,
+    value: UserForm[K],
+  ) {
+    setUserForm((current) => ({ ...current, [field]: value }));
+  }
+
   function resetFleetForm() {
     setFleetForm(emptyFleetForm);
     setEditingVehicleId(null);
@@ -498,6 +536,29 @@ export default function Home() {
         : "Mantenimiento creado correctamente.",
     );
 
+    await loadData();
+  }
+
+  async function submitUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage("");
+
+    const response = await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userForm),
+    });
+    const data = await response.json();
+    setSaving(false);
+
+    if (!response.ok) {
+      setMessage(data.error ?? "No se pudo crear el usuario.");
+      return;
+    }
+
+    setUserForm(emptyUserForm);
+    setMessage("Usuario creado.");
     await loadData();
   }
 
@@ -615,6 +676,13 @@ export default function Home() {
         >
           Dashboard
         </button>
+        <button
+          className={activeTab === "ADMINISTRACION" ? "activeTab" : ""}
+          type="button"
+          onClick={() => setActiveTab("ADMINISTRACION")}
+        >
+          Administración
+        </button>
       </nav>
 
       <section className="metricStrip" aria-label="Resumen operativo">
@@ -636,7 +704,119 @@ export default function Home() {
         </div>
       </section>
 
-      {activeTab === "DASHBOARD" ? (
+      {activeTab === "ADMINISTRACION" ? (
+        <section className="workspace">
+          <form className="formPanel" onSubmit={submitUser}>
+            <div className="panelHeader">
+              <h2>Registrar usuario</h2>
+            </div>
+
+            <div className="formGrid">
+              <label>
+                Usuario
+                <input
+                  required
+                  autoComplete="username"
+                  value={userForm.usuario}
+                  onChange={(event) =>
+                    updateUserField("usuario", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Contraseña
+                <input
+                  required
+                  autoComplete="new-password"
+                  minLength={6}
+                  type="password"
+                  value={userForm.password}
+                  onChange={(event) =>
+                    updateUserField("password", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Perfil
+                <select
+                  value={userForm.rol}
+                  onChange={(event) =>
+                    updateUserField("rol", event.target.value as RolUsuario)
+                  }
+                >
+                  <option value="ANALISTA">Analista</option>
+                  <option value="ADMINISTRADOR">Administrador</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="formActions">
+              <button type="submit" disabled={saving}>
+                {saving ? "Guardando..." : "Crear usuario"}
+              </button>
+              {message && (
+                <p
+                  className={
+                    isErrorMessage(message)
+                      ? "statusMessage errorMessage"
+                      : "statusMessage"
+                  }
+                >
+                  {message}
+                </p>
+              )}
+            </div>
+          </form>
+
+          <section className="recordsPanel">
+            <div className="recordsHeader">
+              <div>
+                <h2>Usuarios del sistema</h2>
+                <p>{users.length} usuario(s)</p>
+              </div>
+            </div>
+
+            <div className="tableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Perfil</th>
+                    <th>Creado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={3}>Cargando usuarios...</td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={3}>No hay usuarios registrados.</td>
+                    </tr>
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.id}>
+                        <td>
+                          <strong className="primaryCell">{user.usuario}</strong>
+                        </td>
+                        <td>
+                          <span className={`roleBadge ${user.rol}`}>
+                            {user.rol === "ADMINISTRADOR"
+                              ? "Administrador"
+                              : "Analista"}
+                          </span>
+                        </td>
+                        <td>{dateForInput(user.createdAt)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      ) : activeTab === "DASHBOARD" ? (
         <section className="dashboardGrid">
           <section className="dashboardHero">
             <div>

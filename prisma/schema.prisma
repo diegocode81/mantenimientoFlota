@@ -20,6 +20,11 @@ enum TipoMantenimiento {
   PROACTIVO
 }
 
+enum RolUsuario {
+  ADMINISTRADOR
+  ANALISTA
+}
+
 model Vehiculo {
   id             String                  @id @default(cuid())
   itemOrigen     String?
@@ -58,4 +63,15 @@ model MantenimientoVehiculo {
   @@index([estado])
   @@index([tipoMantenimiento])
   @@index([fechaMantenimiento])
+}
+
+model Usuario {
+  id           String     @id @default(cuid())
+  usuario      String     @unique
+  passwordHash String
+  rol          RolUsuario
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([rol])
 }

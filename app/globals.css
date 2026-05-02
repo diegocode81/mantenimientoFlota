@@ -659,6 +659,30 @@ tbody tr:last-child td {
   color: var(--warning);
 }
 
+.roleBadge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  min-height: 28px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.roleBadge.ADMINISTRADOR {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.roleBadge.ANALISTA {
+  background: var(--surface-strong);
+  color: #344054;
+}
+
+.errorMessage {
+  color: var(--danger);
+}
+
 .rowActions {
   display: flex;
   gap: 8px;
