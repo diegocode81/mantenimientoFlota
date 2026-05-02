@@ -3,7 +3,11 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type EstadoVehiculo = "OPERATIVO" | "MANTENIMIENTO";
-type TipoMantenimiento = "CORRECTIVO" | "PREVENTIVO" | "PROACTIVO";
+type TipoMantenimiento =
+  | "OPERATIVO"
+  | "CORRECTIVO"
+  | "PREVENTIVO"
+  | "PROACTIVO";
 type Tab = "FLOTA" | "MANTENIMIENTOS" | "DASHBOARD";
 
 type FleetVehicle = {
@@ -26,7 +30,7 @@ type MaintenanceRecord = {
   fechaMantenimiento: string;
   estado: EstadoVehiculo;
   kilometrajeOdometro: number;
-  tipoMantenimiento: TipoMantenimiento | null;
+  tipoMantenimiento: TipoMantenimiento;
   rutaUbicacion: string;
   tecnicosDesignados: string;
   observaciones: string | null;
@@ -69,7 +73,7 @@ const emptyMaintenanceForm: MaintenanceForm = {
   fechaMantenimiento: new Date().toISOString().slice(0, 10),
   estado: "OPERATIVO",
   kilometrajeOdometro: 0,
-  tipoMantenimiento: "PREVENTIVO",
+  tipoMantenimiento: "OPERATIVO",
   rutaUbicacion: "",
   tecnicosDesignados: "",
   observaciones: "",
@@ -99,9 +103,9 @@ function percent(value: number, total: number) {
 
 function formatTipoMantenimiento(
   estado: EstadoVehiculo,
-  tipo: TipoMantenimiento | null,
+  tipo: TipoMantenimiento,
 ) {
-  if (estado === "OPERATIVO") return "No aplica";
+  if (estado === "OPERATIVO" || tipo === "OPERATIVO") return "Operativo";
   if (tipo === "CORRECTIVO") return "Correctivo";
   if (tipo === "PREVENTIVO") return "Preventivo";
   if (tipo === "PROACTIVO") return "Proactivo";
@@ -321,8 +325,7 @@ export default function Home() {
       .filter((record) => record.estado === "MANTENIMIENTO")
       .sort((a, b) =>
         (a.vehiculo.placa ?? "").localeCompare(b.vehiculo.placa ?? ""),
-      )
-      .slice(0, 8);
+      );
 
     return {
       availability,
@@ -461,7 +464,7 @@ export default function Home() {
       ...maintenanceForm,
       tipoMantenimiento:
         maintenanceForm.estado === "OPERATIVO"
-          ? null
+          ? "OPERATIVO"
           : maintenanceForm.tipoMantenimiento,
     };
 
@@ -521,7 +524,7 @@ export default function Home() {
       fechaMantenimiento: dateForInput(record.fechaMantenimiento),
       estado: record.estado,
       kilometrajeOdometro: record.kilometrajeOdometro,
-      tipoMantenimiento: record.tipoMantenimiento ?? "PREVENTIVO",
+      tipoMantenimiento: record.tipoMantenimiento,
       rutaUbicacion: record.rutaUbicacion,
       tecnicosDesignados: record.tecnicosDesignados,
       observaciones: record.observaciones ?? "",
@@ -1096,8 +1099,10 @@ export default function Home() {
                       estado,
                       tipoMantenimiento:
                         estado === "OPERATIVO"
-                          ? "PREVENTIVO"
-                          : prev.tipoMantenimiento,
+                          ? "OPERATIVO"
+                          : prev.tipoMantenimiento === "OPERATIVO"
+                            ? "PREVENTIVO"
+                            : prev.tipoMantenimiento,
                     }));
                   }}
                 >
@@ -1123,7 +1128,14 @@ export default function Home() {
                 />
               </label>
 
-              {maintenanceForm.estado === "MANTENIMIENTO" && (
+              {maintenanceForm.estado === "OPERATIVO" ? (
+                <label>
+                  Tipo de mantenimiento
+                  <select value="OPERATIVO" disabled>
+                    <option value="OPERATIVO">Operativo</option>
+                  </select>
+                </label>
+              ) : (
                 <label>
                   Tipo de mantenimiento
                   <select

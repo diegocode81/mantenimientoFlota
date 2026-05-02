@@ -14,6 +14,7 @@ enum EstadoVehiculo {
 }
 
 enum TipoMantenimiento {
+  OPERATIVO
   CORRECTIVO
   PREVENTIVO
   PROACTIVO
@@ -45,7 +46,7 @@ model MantenimientoVehiculo {
   fechaMantenimiento  DateTime
   estado              EstadoVehiculo
   kilometrajeOdometro Int               @default(0)
-  tipoMantenimiento   TipoMantenimiento?
+  tipoMantenimiento   TipoMantenimiento @default(OPERATIVO)
   rutaUbicacion       String
   tecnicosDesignados  String
   observaciones       String?

@@ -49,7 +49,9 @@ export async function GET() {
         record.fechaMantenimiento.toISOString().slice(0, 10),
         record.estado === "MANTENIMIENTO" ? "Mantenimiento" : "Operativo",
         record.kilometrajeOdometro,
-        record.tipoMantenimiento === "CORRECTIVO"
+        record.tipoMantenimiento === "OPERATIVO"
+          ? "Operativo"
+          : record.tipoMantenimiento === "CORRECTIVO"
           ? "Mantenimiento correctivo"
           : record.tipoMantenimiento === "PREVENTIVO"
             ? "Mantenimiento preventivo"
