@@ -21,6 +21,39 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = parseMaintenanceInput(await request.json());
+
+    const startOfDay = new Date(data.fechaMantenimiento);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(data.fechaMantenimiento);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    if (data.estado === "MANTENIMIENTO") {
+      const existingMaintenance = await prisma.mantenimientoVehiculo.findFirst({
+        where: {
+          vehiculoId: data.vehiculoId,
+          estado: "MANTENIMIENTO",
+          fechaMantenimiento: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+        include: {
+          vehiculo: true,
+        },
+      });
+
+      if (existingMaintenance) {
+        return NextResponse.json(
+          {
+            error:
+              "Este vehículo ya se encuentra registrado en mantenimiento para esta fecha.",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const record = await prisma.mantenimientoVehiculo.create({
       data,
       include: { vehiculo: true },

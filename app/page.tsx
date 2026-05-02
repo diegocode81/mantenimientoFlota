@@ -105,6 +105,18 @@ function formatTipoMantenimiento(
   return "No aplica";
 }
 
+function isErrorMessage(message: string) {
+  const text = message.toLowerCase();
+  return (
+    text.includes("no se pudo") ||
+    text.includes("ya se encuentra") ||
+    text.includes("error") ||
+    text.includes("obligatorio") ||
+    text.includes("invalido") ||
+    text.includes("inválido")
+  );
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("FLOTA");
   const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
@@ -252,6 +264,7 @@ export default function Home() {
         .map((record) => dateForInput(record.fechaMantenimiento))
         .sort()
         .at(-1) ?? "";
+
     const availability = percent(latestStatusSummary.operative, vehicles.length);
 
     const byCia = Array.from(
@@ -398,6 +411,7 @@ export default function Home() {
         body: JSON.stringify(fleetForm),
       },
     );
+
     const data = await response.json();
     setSaving(false);
 
@@ -434,20 +448,26 @@ export default function Home() {
         body: JSON.stringify(payload),
       },
     );
+
     const data = await response.json();
     setSaving(false);
 
     if (!response.ok) {
-      setMessage(data.error ?? "No se pudo guardar el mantenimiento.");
+      setMessage(
+        data.error ||
+          "Este vehículo ya se encuentra registrado en mantenimiento para esta fecha.",
+      );
       return;
     }
 
     resetMaintenanceForm();
+
     setMessage(
       editingMaintenanceId
-        ? "Mantenimiento actualizado."
-        : "Mantenimiento creado.",
+        ? "Mantenimiento actualizado correctamente."
+        : "Mantenimiento creado correctamente.",
     );
+
     await loadData();
   }
 
@@ -778,6 +798,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Disco
                 <input
@@ -788,6 +809,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Marca
                 <input
@@ -798,6 +820,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Tipo
                 <input
@@ -808,6 +831,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Año
                 <input
@@ -824,6 +848,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 CIA
                 <input
@@ -844,7 +869,18 @@ export default function Home() {
                     ? "Actualizar"
                     : "Guardar"}
               </button>
-              {message && <p className="statusMessage">{message}</p>}
+
+              {message && (
+                <p
+                  className="statusMessage"
+                  style={{
+                    color: isErrorMessage(message) ? "#dc2626" : "#047857",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
             </div>
           </form>
 
@@ -924,6 +960,7 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
+
             <div className="paginationBar">
               <span>{getPageRange(fleetPage, filteredVehicles.length)}</span>
               <div className="paginationActions">
@@ -989,6 +1026,7 @@ export default function Home() {
                   ))}
                 </select>
               </label>
+
               <label>
                 Fecha de mantenimiento
                 <input
@@ -1003,6 +1041,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Estado
                 <select
@@ -1024,6 +1063,7 @@ export default function Home() {
                   <option value="MANTENIMIENTO">Mantenimiento</option>
                 </select>
               </label>
+
               <label>
                 Kilometraje / Odometro
                 <input
@@ -1074,6 +1114,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label>
                 Tecnicos designados
                 <input
@@ -1087,6 +1128,7 @@ export default function Home() {
                   }
                 />
               </label>
+
               <label className="wideField">
                 Observaciones
                 <textarea
@@ -1107,7 +1149,18 @@ export default function Home() {
                     ? "Actualizar"
                     : "Guardar"}
               </button>
-              {message && <p className="statusMessage">{message}</p>}
+
+              {message && (
+                <p
+                  className="statusMessage"
+                  style={{
+                    color: isErrorMessage(message) ? "#dc2626" : "#047857",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
             </div>
           </form>
 
@@ -1222,6 +1275,7 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
+
             <div className="paginationBar">
               <span>
                 {getPageRange(maintenancePage, filteredMaintenance.length)}
