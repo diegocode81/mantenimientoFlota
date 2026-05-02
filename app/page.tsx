@@ -124,9 +124,8 @@ export default function Home() {
     MaintenanceRecord[]
   >([]);
   const [fleetForm, setFleetForm] = useState<FleetForm>(emptyFleetForm);
-  const [maintenanceForm, setMaintenanceForm] = useState<MaintenanceForm>(
-    emptyMaintenanceForm,
-  );
+  const [maintenanceForm, setMaintenanceForm] =
+    useState<MaintenanceForm>(emptyMaintenanceForm);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [editingMaintenanceId, setEditingMaintenanceId] = useState<
     string | null
@@ -180,13 +179,7 @@ export default function Home() {
     if (!term) return vehicles;
 
     return vehicles.filter((vehicle) =>
-      [
-        vehicle.placa,
-        vehicle.disco,
-        vehicle.marca,
-        vehicle.tipo,
-        vehicle.cia,
-      ]
+      [vehicle.placa, vehicle.disco, vehicle.marca, vehicle.tipo, vehicle.cia]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
@@ -265,7 +258,10 @@ export default function Home() {
         .sort()
         .at(-1) ?? "";
 
-    const availability = percent(latestStatusSummary.operative, vehicles.length);
+    const availability = percent(
+      latestStatusSummary.operative,
+      vehicles.length,
+    );
 
     const byCia = Array.from(
       vehicles.reduce((map, vehicle) => {
@@ -346,6 +342,27 @@ export default function Home() {
     const start = (maintenancePage - 1) * PAGE_SIZE;
     return filteredMaintenance.slice(start, start + PAGE_SIZE);
   }, [filteredMaintenance, maintenancePage]);
+
+  const vehiclesAvailableForDate = useMemo(() => {
+    const selectedDate = maintenanceForm.fechaMantenimiento;
+
+    const registeredVehicleIds = new Set(
+      maintenanceRecords
+        .filter(
+          (record) =>
+            dateForInput(record.fechaMantenimiento) === selectedDate &&
+            record.id !== editingMaintenanceId,
+        )
+        .map((record) => record.vehiculoId),
+    );
+
+    return vehicles.filter((vehicle) => !registeredVehicleIds.has(vehicle.id));
+  }, [
+    vehicles,
+    maintenanceRecords,
+    maintenanceForm.fechaMantenimiento,
+    editingMaintenanceId,
+  ]);
 
   useEffect(() => {
     setFleetPage(1);
@@ -763,7 +780,9 @@ export default function Home() {
               {dashboardStats.latestMaintenanceVehicles.map((record) => (
                 <span className="vehiclePill" key={record.id}>
                   <strong>{record.vehiculo.placa ?? "Sin placa"}</strong>
-                  {record.observaciones || record.rutaUbicacion || "Sin detalle"}
+                  {record.observaciones ||
+                    record.rutaUbicacion ||
+                    "Sin detalle"}
                 </span>
               ))}
             </div>
@@ -1018,7 +1037,7 @@ export default function Home() {
                   }
                 >
                   <option value="">Seleccione un vehiculo</option>
-                  {vehicles.map((vehicle) => (
+                  {vehiclesAvailableForDate.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
                       {vehicle.placa ?? "Sin placa"} -{" "}
                       {vehicle.marca ?? "Sin marca"} {vehicle.tipo}
@@ -1093,12 +1112,8 @@ export default function Home() {
                       )
                     }
                   >
-                    <option value="CORRECTIVO">
-                      Mantenimiento correctivo
-                    </option>
-                    <option value="PREVENTIVO">
-                      Mantenimiento preventivo
-                    </option>
+                    <option value="CORRECTIVO">Mantenimiento correctivo</option>
+                    <option value="PREVENTIVO">Mantenimiento preventivo</option>
                     <option value="PROACTIVO">Mantenimiento proactivo</option>
                   </select>
                 </label>
