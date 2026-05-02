@@ -212,11 +212,42 @@ export default function Home() {
   const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
   const isAdmin = currentUser?.rol === "ADMINISTRADOR";
 
+  async function expireSession() {
+    setCurrentUser(null);
+    setVehicles([]);
+    setMaintenanceRecords([]);
+    setUsers([]);
+    setActiveTab("FLOTA");
+    setEditingVehicleId(null);
+    setEditingMaintenanceId(null);
+    setEditingUserId(null);
+    setSaving(false);
+    setLoading(false);
+    setMessage("");
+    setAuthMessage(
+      "Tu sesión fue cerrada porque este usuario inició sesión en otro lugar.",
+    );
+
+    const statusResponse = await fetch("/api/auth/status");
+    const status = await statusResponse.json();
+    setHasUsers(Boolean(status.hasUsers));
+  }
+
+  async function guardedFetch(input: RequestInfo | URL, init?: RequestInit) {
+    const response = await fetch(input, init);
+
+    if (response.status === 401) {
+      await expireSession();
+    }
+
+    return response;
+  }
+
   async function loadData(user: CurrentUser | null = currentUser) {
     setLoading(true);
     const [vehiclesResponse, maintenanceResponse] = await Promise.all([
-      fetch("/api/vehicles"),
-      fetch("/api/maintenance"),
+      guardedFetch("/api/vehicles"),
+      guardedFetch("/api/maintenance"),
     ]);
     const [vehiclesData, maintenanceData] = await Promise.all([
       vehiclesResponse.json(),
@@ -239,7 +270,7 @@ export default function Home() {
 
     let usersData: SystemUser[] = [];
     if (user?.rol === "ADMINISTRADOR") {
-      const usersResponse = await fetch("/api/users");
+      const usersResponse = await guardedFetch("/api/users");
       const parsedUsersData = await usersResponse.json();
 
       if (!usersResponse.ok) {
@@ -614,7 +645,7 @@ export default function Home() {
     setSaving(true);
     setMessage("");
 
-    const response = await fetch(
+    const response = await guardedFetch(
       editingVehicleId ? `/api/vehicles/${editingVehicleId}` : "/api/vehicles",
       {
         method: editingVehicleId ? "PUT" : "POST",
@@ -625,6 +656,8 @@ export default function Home() {
 
     const data = await response.json();
     setSaving(false);
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(data.error ?? "No se pudo guardar el vehiculo.");
@@ -649,7 +682,7 @@ export default function Home() {
           : maintenanceForm.tipoMantenimiento,
     };
 
-    const response = await fetch(
+    const response = await guardedFetch(
       editingMaintenanceId
         ? `/api/maintenance/${editingMaintenanceId}`
         : "/api/maintenance",
@@ -662,6 +695,8 @@ export default function Home() {
 
     const data = await response.json();
     setSaving(false);
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(
@@ -688,7 +723,7 @@ export default function Home() {
     setMessage("");
     const isEditing = Boolean(editingUserId);
 
-    const response = await fetch(
+    const response = await guardedFetch(
       editingUserId ? `/api/users/${editingUserId}` : "/api/users",
       {
         method: editingUserId ? "PUT" : "POST",
@@ -698,6 +733,8 @@ export default function Home() {
     );
     const data = await response.json();
     setSaving(false);
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(data.error ?? "No se pudo crear el usuario.");
@@ -728,10 +765,12 @@ export default function Home() {
     const confirmed = window.confirm(`Eliminar el usuario ${user.usuario}?`);
     if (!confirmed) return;
 
-    const response = await fetch(`/api/users/${user.id}`, {
+    const response = await guardedFetch(`/api/users/${user.id}`, {
       method: "DELETE",
     });
     const data = await response.json();
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(data.error ?? "No se pudo eliminar el usuario.");
@@ -781,10 +820,12 @@ export default function Home() {
     );
     if (!confirmed) return;
 
-    const response = await fetch(`/api/vehicles/${vehicle.id}`, {
+    const response = await guardedFetch(`/api/vehicles/${vehicle.id}`, {
       method: "DELETE",
     });
     const data = await response.json();
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(data.error ?? "No se pudo eliminar el vehiculo.");
@@ -801,10 +842,12 @@ export default function Home() {
     );
     if (!confirmed) return;
 
-    const response = await fetch(`/api/maintenance/${record.id}`, {
+    const response = await guardedFetch(`/api/maintenance/${record.id}`, {
       method: "DELETE",
     });
     const data = await response.json();
+
+    if (response.status === 401) return;
 
     if (!response.ok) {
       setMessage(data.error ?? "No se pudo eliminar el mantenimiento.");
