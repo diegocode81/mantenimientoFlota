@@ -158,6 +158,7 @@ export default function Home() {
   const [editingMaintenanceId, setEditingMaintenanceId] = useState<
     string | null
   >(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [fleetSearch, setFleetSearch] = useState("");
   const [maintenanceSearch, setMaintenanceSearch] = useState("");
   const [maintenanceDate, setMaintenanceDate] = useState("");
@@ -461,6 +462,13 @@ export default function Home() {
     setMessage("");
   }
 
+  function resetUserForm() {
+    setUserForm(emptyUserForm);
+    setEditingUserId(null);
+    setShowPassword(false);
+    setMessage("");
+  }
+
   useEffect(() => {
     if (!maintenanceForm.vehiculoId && vehicles[0]?.id) {
       updateMaintenanceField("vehiculoId", vehicles[0].id);
@@ -544,12 +552,16 @@ export default function Home() {
     event.preventDefault();
     setSaving(true);
     setMessage("");
+    const isEditing = Boolean(editingUserId);
 
-    const response = await fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userForm),
-    });
+    const response = await fetch(
+      editingUserId ? `/api/users/${editingUserId}` : "/api/users",
+      {
+        method: editingUserId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userForm),
+      },
+    );
     const data = await response.json();
     setSaving(false);
 
@@ -558,8 +570,38 @@ export default function Home() {
       return;
     }
 
-    setUserForm(emptyUserForm);
-    setMessage("Usuario creado.");
+    resetUserForm();
+    setMessage(isEditing ? "Usuario actualizado." : "Usuario creado.");
+    await loadData();
+  }
+
+  function startUserEdit(user: SystemUser) {
+    setEditingUserId(user.id);
+    setUserForm({
+      usuario: user.usuario,
+      password: "",
+      rol: user.rol,
+    });
+    setActiveTab("ADMINISTRACION");
+    setMessage("Editando usuario seleccionado.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function deleteUser(user: SystemUser) {
+    const confirmed = window.confirm(`Eliminar el usuario ${user.usuario}?`);
+    if (!confirmed) return;
+
+    const response = await fetch(`/api/users/${user.id}`, {
+      method: "DELETE",
+    });
+    const data = await response.json();
+
+    if (!response.ok) {
+      setMessage(data.error ?? "No se pudo eliminar el usuario.");
+      return;
+    }
+
+    setMessage("Usuario eliminado.");
     await loadData();
   }
 
@@ -709,7 +751,16 @@ export default function Home() {
         <section className="workspace">
           <form className="formPanel" onSubmit={submitUser}>
             <div className="panelHeader">
-              <h2>Registrar usuario</h2>
+              <h2>{editingUserId ? "Actualizar usuario" : "Registrar usuario"}</h2>
+              {editingUserId && (
+                <button
+                  className="ghostButton"
+                  type="button"
+                  onClick={resetUserForm}
+                >
+                  Cancelar
+                </button>
+              )}
             </div>
 
             <div className="formGrid">
@@ -728,9 +779,12 @@ export default function Home() {
                 Contraseña
                 <span className="passwordField">
                   <input
-                    required
+                    required={!editingUserId}
                     autoComplete="new-password"
                     minLength={6}
+                    placeholder={
+                      editingUserId ? "Dejar en blanco para mantener" : ""
+                    }
                     type={showPassword ? "text" : "password"}
                     value={userForm.password}
                     onChange={(event) =>
@@ -771,7 +825,11 @@ export default function Home() {
 
             <div className="formActions">
               <button type="submit" disabled={saving}>
-                {saving ? "Guardando..." : "Crear usuario"}
+                {saving
+                  ? "Guardando..."
+                  : editingUserId
+                    ? "Actualizar usuario"
+                    : "Crear usuario"}
               </button>
               {message && (
                 <p
@@ -802,16 +860,17 @@ export default function Home() {
                     <th>Usuario</th>
                     <th>Perfil</th>
                     <th>Creado</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={3}>Cargando usuarios...</td>
+                      <td colSpan={4}>Cargando usuarios...</td>
                     </tr>
                   ) : users.length === 0 ? (
                     <tr>
-                      <td colSpan={3}>No hay usuarios registrados.</td>
+                      <td colSpan={4}>No hay usuarios registrados.</td>
                     </tr>
                   ) : (
                     users.map((user) => (
@@ -827,6 +886,23 @@ export default function Home() {
                           </span>
                         </td>
                         <td>{dateForInput(user.createdAt)}</td>
+                        <td>
+                          <div className="rowActions">
+                            <button
+                              type="button"
+                              onClick={() => startUserEdit(user)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              className="dangerButton"
+                              type="button"
+                              onClick={() => deleteUser(user)}
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
