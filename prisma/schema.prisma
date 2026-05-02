@@ -68,10 +68,14 @@ model MantenimientoVehiculo {
 model Usuario {
   id           String     @id @default(cuid())
   usuario      String     @unique
+  nombre       String?
+  apellido     String?
+  correo       String?    @unique
   passwordHash String
   rol          RolUsuario
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   @@index([rol])
+  @@index([correo])
 }

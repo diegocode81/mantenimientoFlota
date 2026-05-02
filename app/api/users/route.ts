@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import {
   forbiddenResponse,
   hashPassword,
+  normalizeEmail,
   normalizeUser,
   parsePassword,
   parseRole,
   requireAdmin,
+  requireText,
   unauthorizedResponse,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +22,9 @@ export async function GET() {
       select: {
         id: true,
         usuario: true,
+        nombre: true,
+        apellido: true,
+        correo: true,
         rol: true,
         createdAt: true,
         updatedAt: true,
@@ -42,18 +47,27 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const usuario = normalizeUser(body.usuario);
+    const nombre = requireText(body.nombre, "nombre");
+    const apellido = requireText(body.apellido, "apellido");
+    const correo = normalizeEmail(body.correo);
     const password = parsePassword(body.password);
     const rol = parseRole(body.rol);
 
     const user = await prisma.usuario.create({
       data: {
         usuario,
+        nombre,
+        apellido,
+        correo,
         passwordHash: hashPassword(password),
         rol,
       },
       select: {
         id: true,
         usuario: true,
+        nombre: true,
+        apellido: true,
+        correo: true,
         rol: true,
         createdAt: true,
         updatedAt: true,

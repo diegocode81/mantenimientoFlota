@@ -41,6 +41,9 @@ type MaintenanceRecord = {
 type SystemUser = {
   id: string;
   usuario: string;
+  nombre: string | null;
+  apellido: string | null;
+  correo: string | null;
   rol: RolUsuario;
   createdAt: string;
 };
@@ -74,12 +77,18 @@ type MaintenanceForm = {
 
 type UserForm = {
   usuario: string;
+  nombre: string;
+  apellido: string;
+  correo: string;
   password: string;
   rol: RolUsuario;
 };
 
 type LoginForm = {
   usuario: string;
+  nombre: string;
+  apellido: string;
+  correo: string;
   password: string;
 };
 
@@ -106,12 +115,18 @@ const emptyMaintenanceForm: MaintenanceForm = {
 
 const emptyUserForm: UserForm = {
   usuario: "",
+  nombre: "",
+  apellido: "",
+  correo: "",
   password: "",
   rol: "ANALISTA",
 };
 
 const emptyLoginForm: LoginForm = {
   usuario: "",
+  nombre: "",
+  apellido: "",
+  correo: "",
   password: "",
 };
 
@@ -186,6 +201,7 @@ export default function Home() {
   );
   const [fleetPage, setFleetPage] = useState(1);
   const [maintenancePage, setMaintenancePage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -434,6 +450,7 @@ export default function Home() {
 
   const fleetPageCount = getPageCount(filteredVehicles.length);
   const maintenancePageCount = getPageCount(filteredMaintenance.length);
+  const userPageCount = getPageCount(users.length);
 
   const paginatedVehicles = useMemo(() => {
     const start = (fleetPage - 1) * PAGE_SIZE;
@@ -444,6 +461,11 @@ export default function Home() {
     const start = (maintenancePage - 1) * PAGE_SIZE;
     return filteredMaintenance.slice(start, start + PAGE_SIZE);
   }, [filteredMaintenance, maintenancePage]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (userPage - 1) * PAGE_SIZE;
+    return users.slice(start, start + PAGE_SIZE);
+  }, [users, userPage]);
 
   const vehiclesAvailableForDate = useMemo(() => {
     const selectedDate = maintenanceForm.fechaMantenimiento;
@@ -481,6 +503,10 @@ export default function Home() {
   useEffect(() => {
     setMaintenancePage((page) => Math.min(page, maintenancePageCount));
   }, [maintenancePageCount]);
+
+  useEffect(() => {
+    setUserPage((page) => Math.min(page, userPageCount));
+  }, [userPageCount]);
 
   function updateFleetField<K extends keyof FleetForm>(
     field: K,
@@ -687,6 +713,9 @@ export default function Home() {
     setEditingUserId(user.id);
     setUserForm({
       usuario: user.usuario,
+      nombre: user.nombre ?? "",
+      apellido: user.apellido ?? "",
+      correo: user.correo ?? "",
       password: "",
       rol: user.rol,
     });
@@ -835,6 +864,45 @@ export default function Home() {
               }
             />
           </label>
+
+          {!hasUsers && (
+            <>
+              <label>
+                Nombre
+                <input
+                  required
+                  autoComplete="given-name"
+                  value={loginForm.nombre}
+                  onChange={(event) =>
+                    updateLoginField("nombre", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Apellido
+                <input
+                  required
+                  autoComplete="family-name"
+                  value={loginForm.apellido}
+                  onChange={(event) =>
+                    updateLoginField("apellido", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Correo
+                <input
+                  required
+                  autoComplete="email"
+                  type="email"
+                  value={loginForm.correo}
+                  onChange={(event) =>
+                    updateLoginField("correo", event.target.value)
+                  }
+                />
+              </label>
+            </>
+          )}
 
           <label>
             Contraseña
@@ -997,6 +1065,40 @@ export default function Home() {
                 />
               </label>
               <label>
+                Nombre
+                <input
+                  required
+                  autoComplete="given-name"
+                  value={userForm.nombre}
+                  onChange={(event) =>
+                    updateUserField("nombre", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Apellido
+                <input
+                  required
+                  autoComplete="family-name"
+                  value={userForm.apellido}
+                  onChange={(event) =>
+                    updateUserField("apellido", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                Correo
+                <input
+                  required
+                  autoComplete="email"
+                  type="email"
+                  value={userForm.correo}
+                  onChange={(event) =>
+                    updateUserField("correo", event.target.value)
+                  }
+                />
+              </label>
+              <label>
                 Contraseña
                 <span className="passwordField">
                   <input
@@ -1079,6 +1181,9 @@ export default function Home() {
                 <thead>
                   <tr>
                     <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
                     <th>Perfil</th>
                     <th>Creado</th>
                     <th>Acciones</th>
@@ -1087,18 +1192,21 @@ export default function Home() {
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={4}>Cargando usuarios...</td>
+                      <td colSpan={7}>Cargando usuarios...</td>
                     </tr>
                   ) : users.length === 0 ? (
                     <tr>
-                      <td colSpan={4}>No hay usuarios registrados.</td>
+                      <td colSpan={7}>No hay usuarios registrados.</td>
                     </tr>
                   ) : (
-                    users.map((user) => (
+                    paginatedUsers.map((user) => (
                       <tr key={user.id}>
                         <td>
                           <strong className="primaryCell">{user.usuario}</strong>
                         </td>
+                        <td>{user.nombre ?? ""}</td>
+                        <td>{user.apellido ?? ""}</td>
+                        <td>{user.correo ?? ""}</td>
                         <td>
                           <span className={`roleBadge ${user.rol}`}>
                             {user.rol === "ADMINISTRADOR"
@@ -1129,6 +1237,31 @@ export default function Home() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="paginationBar">
+              <span>{getPageRange(userPage, users.length)}</span>
+              <div className="paginationActions">
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={userPage <= 1}
+                  onClick={() => setUserPage((page) => page - 1)}
+                >
+                  Anterior
+                </button>
+                <strong>
+                  Pagina {userPage} de {userPageCount}
+                </strong>
+                <button
+                  className="ghostButton"
+                  type="button"
+                  disabled={userPage >= userPageCount}
+                  onClick={() => setUserPage((page) => page + 1)}
+                >
+                  Siguiente
+                </button>
+              </div>
             </div>
           </section>
         </section>

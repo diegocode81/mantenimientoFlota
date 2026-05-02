@@ -79,6 +79,25 @@ export function normalizeUser(value: unknown) {
   return value.trim().toLowerCase();
 }
 
+export function requireText(value: unknown, field: string) {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`El campo ${field} es obligatorio.`);
+  }
+
+  return value.trim();
+}
+
+export function normalizeEmail(value: unknown) {
+  const email = requireText(value, "correo").toLowerCase();
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  if (!validEmail) {
+    throw new Error("El correo no es valido.");
+  }
+
+  return email;
+}
+
 export function parsePassword(value: unknown) {
   if (typeof value !== "string" || value.length < 6) {
     throw new Error("La contraseña debe tener al menos 6 caracteres.");

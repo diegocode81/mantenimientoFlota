@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import {
   forbiddenResponse,
   hashPassword,
+  normalizeEmail,
   normalizeUser,
   parseOptionalPassword,
   parseRole,
   requireAdmin,
+  requireText,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -22,6 +24,9 @@ export async function PUT(request: Request, context: RouteContext) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const usuario = normalizeUser(body.usuario);
+    const nombre = requireText(body.nombre, "nombre");
+    const apellido = requireText(body.apellido, "apellido");
+    const correo = normalizeEmail(body.correo);
     const password = parseOptionalPassword(body.password);
     const rol = parseRole(body.rol);
 
@@ -29,12 +34,18 @@ export async function PUT(request: Request, context: RouteContext) {
       where: { id },
       data: {
         usuario,
+        nombre,
+        apellido,
+        correo,
         rol,
         ...(password ? { passwordHash: hashPassword(password) } : {}),
       },
       select: {
         id: true,
         usuario: true,
+        nombre: true,
+        apellido: true,
+        correo: true,
         rol: true,
         createdAt: true,
         updatedAt: true,
