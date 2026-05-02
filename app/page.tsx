@@ -16,6 +16,7 @@ type FleetVehicle = {
   ano: number | null;
   anoOriginal: string | null;
   cia: string | null;
+  chofer: string | null;
   _count?: { mantenimientos: number };
 };
 
@@ -39,6 +40,7 @@ type FleetForm = {
   tipo: string;
   ano: number | "";
   cia: string;
+  chofer: string;
 };
 
 type MaintenanceForm = {
@@ -59,6 +61,7 @@ const emptyFleetForm: FleetForm = {
   tipo: "",
   ano: new Date().getFullYear(),
   cia: "",
+  chofer: "",
 };
 
 const emptyMaintenanceForm: MaintenanceForm = {
@@ -179,7 +182,7 @@ export default function Home() {
     if (!term) return vehicles;
 
     return vehicles.filter((vehicle) =>
-      [vehicle.placa, vehicle.disco, vehicle.marca, vehicle.tipo, vehicle.cia]
+      [vehicle.placa, vehicle.disco, vehicle.marca, vehicle.tipo, vehicle.cia, vehicle.chofer]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
@@ -929,6 +932,7 @@ export default function Home() {
                     <th>Tipo</th>
                     <th>Año</th>
                     <th>CIA</th>
+                    <th>Chofer</th>
                     <th>Mantenimientos</th>
                     <th>Acciones</th>
                   </tr>
@@ -955,6 +959,7 @@ export default function Home() {
                         <td>{vehicle.tipo}</td>
                         <td>{vehicle.ano ?? ""}</td>
                         <td>{vehicle.cia ?? ""}</td>
+                        <td>{vehicle.chofer ?? ""}</td>
                         <td>{vehicle._count?.mantenimientos ?? 0}</td>
                         <td>
                           <div className="rowActions">

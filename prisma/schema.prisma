@@ -29,6 +29,7 @@ model Vehiculo {
   ano            Int?
   anoOriginal    String?
   cia            String?
+  chofer         String?
   mantenimientos MantenimientoVehiculo[]
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt

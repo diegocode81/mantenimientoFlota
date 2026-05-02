@@ -7,6 +7,7 @@ export type FleetInput = {
   tipo: string;
   ano: number;
   cia: string;
+  chofer?: string | null;
 };
 
 export type MaintenanceInput = {
@@ -54,6 +55,10 @@ export function parseFleetInput(body: unknown): FleetInput {
     tipo: requireText(data, "tipo"),
     ano,
     cia: requireText(data, "cia"),
+    chofer:
+      typeof data.chofer === "string" && data.chofer.trim()
+        ? data.chofer.trim()
+        : null,
   };
 }
 
