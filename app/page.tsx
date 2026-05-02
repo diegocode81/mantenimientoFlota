@@ -500,6 +500,7 @@ export default function Home() {
       tipo: vehicle.tipo,
       ano: vehicle.ano ?? "",
       cia: vehicle.cia ?? "",
+      chofer: vehicle.chofer ?? "",
     });
     setActiveTab("FLOTA");
     setMessage("Editando vehiculo seleccionado.");
