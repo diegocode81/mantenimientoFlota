@@ -182,7 +182,14 @@ export default function Home() {
     if (!term) return vehicles;
 
     return vehicles.filter((vehicle) =>
-      [vehicle.placa, vehicle.disco, vehicle.marca, vehicle.tipo, vehicle.cia, vehicle.chofer]
+      [
+        vehicle.placa,
+        vehicle.disco,
+        vehicle.marca,
+        vehicle.tipo,
+        vehicle.cia,
+        vehicle.chofer,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
@@ -879,6 +886,16 @@ export default function Home() {
                   value={fleetForm.cia}
                   onChange={(event) =>
                     updateFleetField("cia", event.target.value)
+                  }
+                />
+              </label>
+
+              <label>
+                Chofer
+                <input
+                  value={fleetForm.chofer}
+                  onChange={(event) =>
+                    updateFleetField("chofer", event.target.value)
                   }
                 />
               </label>
