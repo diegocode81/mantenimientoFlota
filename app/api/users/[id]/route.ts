@@ -1,47 +1,22 @@
-import { randomBytes, scryptSync } from "crypto";
-import { RolUsuario } from "@prisma/client";
 import { NextResponse } from "next/server";
+import {
+  forbiddenResponse,
+  hashPassword,
+  normalizeUser,
+  parseOptionalPassword,
+  parseRole,
+  requireAdmin,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-function normalizeUser(value: unknown) {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error("El usuario es obligatorio.");
-  }
-
-  return value.trim().toLowerCase();
-}
-
-function parseOptionalPassword(value: unknown) {
-  if (value === undefined || value === null || value === "") {
-    return null;
-  }
-
-  if (typeof value !== "string" || value.length < 6) {
-    throw new Error("La contraseña debe tener al menos 6 caracteres.");
-  }
-
-  return value;
-}
-
-function parseRole(value: unknown) {
-  if (value !== RolUsuario.ADMINISTRADOR && value !== RolUsuario.ANALISTA) {
-    throw new Error("El perfil no es valido.");
-  }
-
-  return value;
-}
-
-function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
 export async function PUT(request: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+  if (!admin) return forbiddenResponse();
+
   const { id } = await context.params;
 
   try {
@@ -81,6 +56,9 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+  if (!admin) return forbiddenResponse();
+
   const { id } = await context.params;
 
   try {

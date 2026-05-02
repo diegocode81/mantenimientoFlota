@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession, unauthorizedResponse } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 function escapeXml(value: string | number) {
@@ -16,6 +17,9 @@ function cell(value: string | number) {
 }
 
 export async function GET() {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   const records = await prisma.mantenimientoVehiculo.findMany({
     orderBy: [{ fechaMantenimiento: "desc" }, { createdAt: "desc" }],
     include: { vehiculo: true },

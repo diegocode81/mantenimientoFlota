@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireSession, unauthorizedResponse } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseMaintenanceInput } from "@/lib/vehicles";
 
 export async function GET() {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   try {
     const records = await prisma.mantenimientoVehiculo.findMany({
       orderBy: [{ fechaMantenimiento: "desc" }, { createdAt: "desc" }],
@@ -19,6 +23,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   try {
     const data = parseMaintenanceInput(await request.json());
 

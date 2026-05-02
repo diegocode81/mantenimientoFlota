@@ -45,6 +45,12 @@ type SystemUser = {
   createdAt: string;
 };
 
+type CurrentUser = {
+  id: string;
+  usuario: string;
+  rol: RolUsuario;
+};
+
 type FleetForm = {
   placa: string;
   disco: string;
@@ -72,6 +78,11 @@ type UserForm = {
   rol: RolUsuario;
 };
 
+type LoginForm = {
+  usuario: string;
+  password: string;
+};
+
 const emptyFleetForm: FleetForm = {
   placa: "",
   disco: "",
@@ -97,6 +108,11 @@ const emptyUserForm: UserForm = {
   usuario: "",
   password: "",
   rol: "ANALISTA",
+};
+
+const emptyLoginForm: LoginForm = {
+  usuario: "",
+  password: "",
 };
 
 const PAGE_SIZE = 10;
@@ -145,6 +161,9 @@ function isErrorMessage(message: string) {
 }
 
 export default function Home() {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [hasUsers, setHasUsers] = useState(true);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("FLOTA");
   const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
   const [maintenanceRecords, setMaintenanceRecords] = useState<
@@ -170,49 +189,86 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [message, setMessage] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
   const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
+  const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
+  const isAdmin = currentUser?.rol === "ADMINISTRADOR";
 
-  async function loadData() {
+  async function loadData(user: CurrentUser | null = currentUser) {
     setLoading(true);
-    const [vehiclesResponse, maintenanceResponse, usersResponse] =
-      await Promise.all([
+    const [vehiclesResponse, maintenanceResponse] = await Promise.all([
       fetch("/api/vehicles"),
       fetch("/api/maintenance"),
-      fetch("/api/users"),
     ]);
-    const [vehiclesData, maintenanceData, usersData] = await Promise.all([
+    const [vehiclesData, maintenanceData] = await Promise.all([
       vehiclesResponse.json(),
       maintenanceResponse.json(),
-      usersResponse.json(),
     ]);
-    setLoading(false);
 
     if (!vehiclesResponse.ok) {
+      setLoading(false);
       setMessage(vehiclesData.error ?? "No se pudo cargar la flota.");
       return;
     }
 
     if (!maintenanceResponse.ok) {
+      setLoading(false);
       setMessage(
         maintenanceData.error ?? "No se pudieron cargar los mantenimientos.",
       );
       return;
     }
 
-    if (!usersResponse.ok) {
-      setMessage(usersData.error ?? "No se pudieron cargar los usuarios.");
-      return;
+    let usersData: SystemUser[] = [];
+    if (user?.rol === "ADMINISTRADOR") {
+      const usersResponse = await fetch("/api/users");
+      const parsedUsersData = await usersResponse.json();
+
+      if (!usersResponse.ok) {
+        setLoading(false);
+        setMessage(
+          parsedUsersData.error ?? "No se pudieron cargar los usuarios.",
+        );
+        return;
+      }
+
+      usersData = parsedUsersData;
     }
 
+    setLoading(false);
     setVehicles(vehiclesData);
     setMaintenanceRecords(maintenanceData);
     setUsers(usersData);
   }
 
   useEffect(() => {
-    loadData();
+    async function checkAuth() {
+      const sessionResponse = await fetch("/api/auth/me");
+      if (sessionResponse.ok) {
+        const data = await sessionResponse.json();
+        setCurrentUser(data.user);
+        setAuthChecked(true);
+        await loadData(data.user);
+        return;
+      }
+
+      const statusResponse = await fetch("/api/auth/status");
+      const status = await statusResponse.json();
+      setHasUsers(Boolean(status.hasUsers));
+      setLoading(false);
+      setAuthChecked(true);
+    }
+
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!isAdmin && ["DASHBOARD", "ADMINISTRACION"].includes(activeTab)) {
+      setActiveTab("FLOTA");
+    }
+  }, [activeTab, isAdmin]);
 
   const filteredVehicles = useMemo(() => {
     const term = fleetSearch.trim().toLowerCase();
@@ -447,6 +503,58 @@ export default function Home() {
     setUserForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updateLoginField<K extends keyof LoginForm>(
+    field: K,
+    value: LoginForm[K],
+  ) {
+    setLoginForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submitAuth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setAuthMessage("");
+
+    const response = await fetch(
+      hasUsers ? "/api/auth/login" : "/api/auth/bootstrap",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginForm),
+      },
+    );
+    const data = await response.json();
+    setSaving(false);
+
+    if (!response.ok) {
+      setAuthMessage(data.error ?? "No se pudo iniciar sesion.");
+      return;
+    }
+
+    setCurrentUser(data.user);
+    setLoginForm(emptyLoginForm);
+    setAuthMessage("");
+    setHasUsers(true);
+    setActiveTab("FLOTA");
+    await loadData(data.user);
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setCurrentUser(null);
+    setVehicles([]);
+    setMaintenanceRecords([]);
+    setUsers([]);
+    setActiveTab("FLOTA");
+    setMessage("");
+    setAuthMessage("");
+    setLoginForm(emptyLoginForm);
+
+    const statusResponse = await fetch("/api/auth/status");
+    const status = await statusResponse.json();
+    setHasUsers(Boolean(status.hasUsers));
+  }
+
   function resetFleetForm() {
     setFleetForm(emptyFleetForm);
     setEditingVehicleId(null);
@@ -678,6 +786,102 @@ export default function Home() {
     await loadData();
   }
 
+  if (!authChecked) {
+    return (
+      <main className="authShell">
+        <section className="authCard">
+          <span className="brandIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5.4 11.2 7 6.9A3 3 0 0 1 9.8 5h4.4A3 3 0 0 1 17 6.9l1.6 4.3A3 3 0 0 1 21 14v3h-2.1a2.5 2.5 0 0 1-4.8 0H9.9a2.5 2.5 0 0 1-4.8 0H3v-3a3 3 0 0 1 2.4-2.8Zm2.2-.2h8.8l-1.2-3.3a1 1 0 0 0-1-.7H9.8a1 1 0 0 0-1 .7L7.6 11ZM7.5 18a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm9 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1ZM5 15h14v-1a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v1Z" />
+            </svg>
+          </span>
+          <p className="eyebrow">Control operativo</p>
+          <h1>Mantenimiento de flota</h1>
+          <p className="authHint">Validando acceso...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <main className="authShell">
+        <form className="authCard" onSubmit={submitAuth}>
+          <span className="brandIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M5.4 11.2 7 6.9A3 3 0 0 1 9.8 5h4.4A3 3 0 0 1 17 6.9l1.6 4.3A3 3 0 0 1 21 14v3h-2.1a2.5 2.5 0 0 1-4.8 0H9.9a2.5 2.5 0 0 1-4.8 0H3v-3a3 3 0 0 1 2.4-2.8Zm2.2-.2h8.8l-1.2-3.3a1 1 0 0 0-1-.7H9.8a1 1 0 0 0-1 .7L7.6 11ZM7.5 18a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm9 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1ZM5 15h14v-1a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1v1Z" />
+            </svg>
+          </span>
+          <div>
+            <p className="eyebrow">Control operativo</p>
+            <h1>
+              {hasUsers ? "Iniciar sesion" : "Crear primer administrador"}
+            </h1>
+            <p className="authHint">
+              {hasUsers
+                ? "Ingrese con el usuario asignado."
+                : "No hay usuarios registrados. Este acceso inicial quedara como administrador."}
+            </p>
+          </div>
+
+          <label>
+            Usuario
+            <input
+              required
+              autoComplete="username"
+              value={loginForm.usuario}
+              onChange={(event) =>
+                updateLoginField("usuario", event.target.value)
+              }
+            />
+          </label>
+
+          <label>
+            Contraseña
+            <span className="passwordField">
+              <input
+                required
+                autoComplete={hasUsers ? "current-password" : "new-password"}
+                minLength={6}
+                type={showLoginPassword ? "text" : "password"}
+                value={loginForm.password}
+                onChange={(event) =>
+                  updateLoginField("password", event.target.value)
+                }
+              />
+              <button
+                aria-label={
+                  showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                }
+                className="iconButton"
+                type="button"
+                onClick={() => setShowLoginPassword((current) => !current)}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  {showLoginPassword ? (
+                    <path d="M3.7 2.3 21.7 20.3l-1.4 1.4-3.2-3.2A10.9 10.9 0 0 1 12 20C5.4 20 2 12.8 2 12.8a18.7 18.7 0 0 1 4.1-5.3L2.3 3.7l1.4-1.4Zm6.1 8.9a2.4 2.4 0 0 0 3 3l-3-3Zm2.2-7.2c6.6 0 10 7.2 10 7.2a18.4 18.4 0 0 1-2.5 3.7l-2.2-2.2a5.5 5.5 0 0 0-6.9-6.9L8.8 4.2A11.4 11.4 0 0 1 12 4Zm0 2a3.5 3.5 0 0 1 3.5 3.5c0 .4-.1.8-.2 1.1l-4-4c.2 0 .5-.1.7-.1ZM4.3 12.8C5.1 14 7.7 18 12 18c1.2 0 2.3-.3 3.2-.8l-1.3-1.3a5.5 5.5 0 0 1-6.8-6.8L7.5 9c-1.5 1.2-2.6 2.8-3.2 3.8Z" />
+                  ) : (
+                    <path d="M12 4c6.6 0 10 7.2 10 7.2S18.6 20 12 20 2 11.2 2 11.2 5.4 4 12 4Zm0 2c-4.4 0-7.1 4.1-7.8 5.2C4.9 12.3 7.6 18 12 18s7.1-5.7 7.8-6.8C19.1 10.1 16.4 6 12 6Zm0 2.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6Zm0 2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z" />
+                  )}
+                </svg>
+              </button>
+            </span>
+          </label>
+
+          <button type="submit" disabled={saving}>
+            {saving
+              ? "Validando..."
+              : hasUsers
+                ? "Entrar"
+                : "Crear administrador"}
+          </button>
+
+          {authMessage && <p className="authError">{authMessage}</p>}
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="appShell">
       <header className="topBar">
@@ -692,9 +896,20 @@ export default function Home() {
             <h1>Mantenimiento de flota</h1>
           </div>
         </div>
-        <a className="exportButton" href="/api/vehicles/export">
-          Descargar Excel
-        </a>
+        <div className="topActions">
+          <span className={`roleBadge ${currentUser.rol}`}>
+            {currentUser.usuario} ·{" "}
+            {currentUser.rol === "ADMINISTRADOR"
+              ? "Administrador"
+              : "Analista"}
+          </span>
+          <a className="exportButton" href="/api/vehicles/export">
+            Descargar Excel
+          </a>
+          <button className="ghostButton" type="button" onClick={logout}>
+            Salir
+          </button>
+        </div>
       </header>
 
       <nav className="tabs" aria-label="Modulos">
@@ -712,42 +927,48 @@ export default function Home() {
         >
           Mantenimientos
         </button>
-        <button
-          className={activeTab === "DASHBOARD" ? "activeTab" : ""}
-          type="button"
-          onClick={() => setActiveTab("DASHBOARD")}
-        >
-          Dashboard
-        </button>
-        <button
-          className={activeTab === "ADMINISTRACION" ? "activeTab" : ""}
-          type="button"
-          onClick={() => setActiveTab("ADMINISTRACION")}
-        >
-          Administración
-        </button>
+        {isAdmin && (
+          <button
+            className={activeTab === "DASHBOARD" ? "activeTab" : ""}
+            type="button"
+            onClick={() => setActiveTab("DASHBOARD")}
+          >
+            Dashboard
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            className={activeTab === "ADMINISTRACION" ? "activeTab" : ""}
+            type="button"
+            onClick={() => setActiveTab("ADMINISTRACION")}
+          >
+            Administración
+          </button>
+        )}
       </nav>
 
-      <section className="metricStrip" aria-label="Resumen operativo">
-        <div className="metricItem">
-          <span>Vehiculos</span>
-          <strong>{vehicles.length}</strong>
-        </div>
-        <div className="metricItem">
-          <span>Total de Mantenimientos</span>
-          <strong>{maintenanceRecords.length}</strong>
-        </div>
-        <div className="metricItem">
-          <span>En mantenimiento</span>
-          <strong>{latestStatusSummary.inMaintenance}</strong>
-        </div>
-        <div className="metricItem">
-          <span>Operativos</span>
-          <strong>{latestStatusSummary.operative}</strong>
-        </div>
-      </section>
+      {isAdmin && (
+        <section className="metricStrip" aria-label="Resumen operativo">
+          <div className="metricItem">
+            <span>Vehiculos</span>
+            <strong>{vehicles.length}</strong>
+          </div>
+          <div className="metricItem">
+            <span>Total de Mantenimientos</span>
+            <strong>{maintenanceRecords.length}</strong>
+          </div>
+          <div className="metricItem">
+            <span>En mantenimiento</span>
+            <strong>{latestStatusSummary.inMaintenance}</strong>
+          </div>
+          <div className="metricItem">
+            <span>Operativos</span>
+            <strong>{latestStatusSummary.operative}</strong>
+          </div>
+        </section>
+      )}
 
-      {activeTab === "ADMINISTRACION" ? (
+      {activeTab === "ADMINISTRACION" && isAdmin ? (
         <section className="workspace">
           <form className="formPanel" onSubmit={submitUser}>
             <div className="panelHeader">
@@ -911,7 +1132,7 @@ export default function Home() {
             </div>
           </section>
         </section>
-      ) : activeTab === "DASHBOARD" ? (
+      ) : activeTab === "DASHBOARD" && isAdmin ? (
         <section className="dashboardGrid">
           <section className="dashboardHero">
             <div>
@@ -1265,13 +1486,15 @@ export default function Home() {
                             >
                               Editar
                             </button>
-                            <button
-                              className="dangerButton"
-                              type="button"
-                              onClick={() => deleteVehicle(vehicle)}
-                            >
-                              Eliminar
-                            </button>
+                            {isAdmin && (
+                              <button
+                                className="dangerButton"
+                                type="button"
+                                onClick={() => deleteVehicle(vehicle)}
+                              >
+                                Eliminar
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1585,13 +1808,15 @@ export default function Home() {
                             >
                               Editar
                             </button>
-                            <button
-                              className="dangerButton"
-                              type="button"
-                              onClick={() => deleteMaintenance(record)}
-                            >
-                              Eliminar
-                            </button>
+                            {isAdmin && (
+                              <button
+                                className="dangerButton"
+                                type="button"
+                                onClick={() => deleteMaintenance(record)}
+                              >
+                                Eliminar
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

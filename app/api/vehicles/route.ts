@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
+import { requireSession, unauthorizedResponse } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseFleetInput } from "@/lib/vehicles";
 
 export async function GET() {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   try {
     const vehicles = await prisma.vehiculo.findMany({
       orderBy: [{ placa: "asc" }],
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   try {
     const data = parseFleetInput(await request.json());
     const vehicle = await prisma.vehiculo.create({ data });

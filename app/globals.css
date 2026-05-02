@@ -141,12 +141,64 @@ h2 {
   padding: 30px 0 44px;
 }
 
+.authShell {
+  align-items: center;
+  display: grid;
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.authCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 18px;
+  margin: 0 auto;
+  max-width: 440px;
+  padding: 28px;
+  width: 100%;
+}
+
+.authCard .brandIcon {
+  height: 58px;
+  width: 58px;
+}
+
+.authCard h1 {
+  font-size: clamp(1.8rem, 5vw, 2.45rem);
+}
+
+.authHint {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+.authError {
+  background: var(--danger-bg);
+  border: 1px solid #ffd0cc;
+  border-radius: 6px;
+  color: var(--danger);
+  font-weight: 700;
+  margin: 0;
+  padding: 10px 12px;
+}
+
 .topBar {
   align-items: center;
   display: flex;
   gap: 18px;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.topActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
 }
 
 .brandTitle {
@@ -801,6 +853,7 @@ tbody tr:last-child td {
   }
 
   .topBar,
+  .topActions,
   .panelHeader,
   .recordsHeader,
   .formActions,
@@ -814,6 +867,7 @@ tbody tr:last-child td {
   }
 
   .exportButton,
+  .topActions button,
   .formActions button {
     width: 100%;
   }

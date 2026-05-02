@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  forbiddenResponse,
+  requireAdmin,
+  requireSession,
+  unauthorizedResponse,
+} from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseFleetInput } from "@/lib/vehicles";
 
@@ -7,6 +13,9 @@ type RouteContext = {
 };
 
 export async function PUT(request: Request, context: RouteContext) {
+  const session = await requireSession();
+  if (!session) return unauthorizedResponse();
+
   const { id } = await context.params;
 
   try {
@@ -29,6 +38,9 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const admin = await requireAdmin();
+  if (!admin) return forbiddenResponse();
+
   const { id } = await context.params;
 
   try {
