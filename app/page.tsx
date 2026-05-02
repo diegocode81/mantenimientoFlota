@@ -168,6 +168,7 @@ export default function Home() {
   const [maintenancePage, setMaintenancePage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [userForm, setUserForm] = useState<UserForm>(emptyUserForm);
 
@@ -725,16 +726,34 @@ export default function Home() {
               </label>
               <label>
                 Contraseña
-                <input
-                  required
-                  autoComplete="new-password"
-                  minLength={6}
-                  type="password"
-                  value={userForm.password}
-                  onChange={(event) =>
-                    updateUserField("password", event.target.value)
-                  }
-                />
+                <span className="passwordField">
+                  <input
+                    required
+                    autoComplete="new-password"
+                    minLength={6}
+                    type={showPassword ? "text" : "password"}
+                    value={userForm.password}
+                    onChange={(event) =>
+                      updateUserField("password", event.target.value)
+                    }
+                  />
+                  <button
+                    aria-label={
+                      showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                    }
+                    className="iconButton"
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      {showPassword ? (
+                        <path d="M3.7 2.3 21.7 20.3l-1.4 1.4-3.2-3.2A10.9 10.9 0 0 1 12 20C5.4 20 2 12.8 2 12.8a18.7 18.7 0 0 1 4.1-5.3L2.3 3.7l1.4-1.4Zm6.1 8.9a2.4 2.4 0 0 0 3 3l-3-3Zm2.2-7.2c6.6 0 10 7.2 10 7.2a18.4 18.4 0 0 1-2.5 3.7l-2.2-2.2a5.5 5.5 0 0 0-6.9-6.9L8.8 4.2A11.4 11.4 0 0 1 12 4Zm0 2a3.5 3.5 0 0 1 3.5 3.5c0 .4-.1.8-.2 1.1l-4-4c.2 0 .5-.1.7-.1ZM4.3 12.8C5.1 14 7.7 18 12 18c1.2 0 2.3-.3 3.2-.8l-1.3-1.3a5.5 5.5 0 0 1-6.8-6.8L7.5 9c-1.5 1.2-2.6 2.8-3.2 3.8Z" />
+                      ) : (
+                        <path d="M12 4c6.6 0 10 7.2 10 7.2S18.6 20 12 20 2 11.2 2 11.2 5.4 4 12 4Zm0 2c-4.4 0-7.1 4.1-7.8 5.2C4.9 12.3 7.6 18 12 18s7.1-5.7 7.8-6.8C19.1 10.1 16.4 6 12 6Zm0 2.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6Zm0 2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6Z" />
+                      )}
+                    </svg>
+                  </button>
+                </span>
               </label>
               <label>
                 Perfil

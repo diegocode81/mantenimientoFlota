@@ -523,6 +523,45 @@ h2 {
   padding: 14px 20px;
 }
 
+.passwordField {
+  display: block;
+  position: relative;
+}
+
+.passwordField input {
+  padding-right: 46px;
+}
+
+.iconButton {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+}
+
+.iconButton:hover {
+  background: var(--surface-muted);
+  box-shadow: none;
+  color: var(--primary-dark);
+}
+
+.iconButton:active {
+  transform: translateY(-50%);
+}
+
+.iconButton svg {
+  fill: currentColor;
+  height: 21px;
+  width: 21px;
+}
+
 .ghostButton {
   background: #fff;
   border-color: var(--line);
