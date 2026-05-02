@@ -204,6 +204,7 @@ export default function Home() {
   const [userPage, setUserPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [downloadingReport, setDownloadingReport] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [message, setMessage] = useState("");
@@ -858,6 +859,31 @@ export default function Home() {
     await loadData();
   }
 
+  async function downloadReport() {
+    setDownloadingReport(true);
+    setMessage("");
+
+    const response = await guardedFetch("/api/vehicles/export");
+    setDownloadingReport(false);
+
+    if (response.status === 401) return;
+
+    if (!response.ok) {
+      setMessage("No se pudo descargar el informe.");
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mantenimientos-vehiculos.xls";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   if (!authChecked) {
     return (
       <main className="authShell">
@@ -1014,9 +1040,14 @@ export default function Home() {
               ? "Administrador"
               : "Analista"}
           </span>
-          <a className="exportButton" href="/api/vehicles/export">
-            Descargar Excel
-          </a>
+          <button
+            className="exportButton"
+            disabled={downloadingReport}
+            type="button"
+            onClick={downloadReport}
+          >
+            {downloadingReport ? "Descargando..." : "Descargar informe"}
+          </button>
           <button className="ghostButton" type="button" onClick={logout}>
             Salir
           </button>
