@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     });
 
     const response = NextResponse.json({ user }, { status: 201 });
-    setSessionCookie(response, user);
+    await setSessionCookie(response, user);
     return response;
   } catch (error) {
     return NextResponse.json(

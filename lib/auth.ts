@@ -1,7 +1,14 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import {
+  createHash,
+  createHmac,
+  randomBytes,
+  scryptSync,
+  timingSafeEqual,
+} from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { RolUsuario } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export const SESSION_COOKIE = "fleet_session";
 const SESSION_MAX_AGE = 60 * 60 * 8;
@@ -14,6 +21,7 @@ export type SessionUser = {
 
 type SessionPayload = SessionUser & {
   exp: number;
+  sid: string;
 };
 
 function getSecret() {
@@ -28,16 +36,21 @@ function sign(value: string) {
   return createHmac("sha256", getSecret()).update(value).digest("hex");
 }
 
-function encodeSession(user: SessionUser) {
+function hashSessionId(sessionId: string) {
+  return createHash("sha256").update(sessionId).digest("hex");
+}
+
+function encodeSession(user: SessionUser, sessionId: string) {
   const payload: SessionPayload = {
     ...user,
     exp: Date.now() + SESSION_MAX_AGE * 1000,
+    sid: sessionId,
   };
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${body}.${sign(body)}`;
 }
 
-function decodeSession(token: string): SessionUser | null {
+function decodeSession(token: string): SessionPayload | null {
   const [body, signature] = token.split(".");
   if (!body || !signature) return null;
 
@@ -52,7 +65,9 @@ function decodeSession(token: string): SessionUser | null {
       Buffer.from(body, "base64url").toString("utf8"),
     ) as SessionPayload;
 
-    if (!payload.id || !payload.usuario || !payload.rol) return null;
+    if (!payload.id || !payload.usuario || !payload.rol || !payload.sid) {
+      return null;
+    }
     if (payload.exp < Date.now()) return null;
     if (
       payload.rol !== RolUsuario.ADMINISTRADOR &&
@@ -61,11 +76,7 @@ function decodeSession(token: string): SessionUser | null {
       return null;
     }
 
-    return {
-      id: payload.id,
-      usuario: payload.usuario,
-      rol: payload.rol,
-    };
+    return payload;
   } catch {
     return null;
   }
@@ -140,7 +151,27 @@ export function verifyPassword(password: string, stored: string) {
 export async function getSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  return token ? decodeSession(token) : null;
+  const payload = token ? decodeSession(token) : null;
+  if (!payload) return null;
+
+  const user = await prisma.usuario.findUnique({
+    where: { id: payload.id },
+    select: {
+      id: true,
+      usuario: true,
+      rol: true,
+      sessionHash: true,
+    },
+  });
+
+  if (!user?.sessionHash) return null;
+  if (user.sessionHash !== hashSessionId(payload.sid)) return null;
+
+  return {
+    id: user.id,
+    usuario: user.usuario,
+    rol: user.rol,
+  };
 }
 
 export async function requireSession() {
@@ -152,8 +183,17 @@ export async function requireAdmin() {
   return session?.rol === RolUsuario.ADMINISTRADOR ? session : null;
 }
 
-export function setSessionCookie(response: NextResponse, user: SessionUser) {
-  response.cookies.set(SESSION_COOKIE, encodeSession(user), {
+export async function setSessionCookie(
+  response: NextResponse,
+  user: SessionUser,
+) {
+  const sessionId = randomBytes(32).toString("hex");
+  await prisma.usuario.update({
+    where: { id: user.id },
+    data: { sessionHash: hashSessionId(sessionId) },
+  });
+
+  response.cookies.set(SESSION_COOKIE, encodeSession(user, sessionId), {
     httpOnly: true,
     maxAge: SESSION_MAX_AGE,
     path: "/",
@@ -169,6 +209,13 @@ export function clearSessionCookie(response: NextResponse) {
     path: "/",
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+  });
+}
+
+export async function clearActiveSession(userId: string) {
+  await prisma.usuario.update({
+    where: { id: userId },
+    data: { sessionHash: null },
   });
 }
 
