@@ -554,6 +554,44 @@ export default function Home() {
     setMaintenanceForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updateMaintenanceVehicle(vehiculoId: string) {
+    setMaintenanceForm((current) => {
+      const latestRecord = maintenanceRecords.reduce<MaintenanceRecord | null>(
+        (latest, record) => {
+          if (
+            record.vehiculoId !== vehiculoId ||
+            record.id === editingMaintenanceId
+          ) {
+            return latest;
+          }
+
+          if (!latest) return record;
+
+          return new Date(record.fechaMantenimiento) >
+            new Date(latest.fechaMantenimiento)
+            ? record
+            : latest;
+        },
+        null,
+      );
+
+      if (!latestRecord) {
+        return { ...current, vehiculoId };
+      }
+
+      return {
+        vehiculoId,
+        fechaMantenimiento: current.fechaMantenimiento,
+        estado: latestRecord.estado,
+        kilometrajeOdometro: latestRecord.kilometrajeOdometro,
+        tipoMantenimiento: latestRecord.tipoMantenimiento,
+        rutaUbicacion: latestRecord.rutaUbicacion,
+        tecnicosDesignados: latestRecord.tecnicosDesignados,
+        observaciones: latestRecord.observaciones ?? "",
+      };
+    });
+  }
+
   function updateUserField<K extends keyof UserForm>(
     field: K,
     value: UserForm[K],
@@ -637,7 +675,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!maintenanceForm.vehiculoId && vehicles[0]?.id) {
-      updateMaintenanceField("vehiculoId", vehicles[0].id);
+      updateMaintenanceVehicle(vehicles[0].id);
     }
   }, [maintenanceForm.vehiculoId, vehicles]);
 
@@ -1764,7 +1802,7 @@ export default function Home() {
                   required
                   value={maintenanceForm.vehiculoId}
                   onChange={(event) =>
-                    updateMaintenanceField("vehiculoId", event.target.value)
+                    updateMaintenanceVehicle(event.target.value)
                   }
                 >
                   <option value="">Seleccione un disco</option>
