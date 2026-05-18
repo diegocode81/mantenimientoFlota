@@ -1759,7 +1759,7 @@ export default function Home() {
 
             <div className="formGrid">
               <label className="wideField">
-                Vehiculo
+                Disco
                 <select
                   required
                   value={maintenanceForm.vehiculoId}
@@ -1767,11 +1767,10 @@ export default function Home() {
                     updateMaintenanceField("vehiculoId", event.target.value)
                   }
                 >
-                  <option value="">Seleccione un vehiculo</option>
+                  <option value="">Seleccione un disco</option>
                   {vehiclesAvailableForDate.map((vehicle) => (
                     <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.placa ?? "Sin placa"} -{" "}
-                      {vehicle.marca ?? "Sin marca"} {vehicle.tipo}
+                      {vehicle.disco ?? "Sin disco"}
                     </option>
                   ))}
                 </select>
